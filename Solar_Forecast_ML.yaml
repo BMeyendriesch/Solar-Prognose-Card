@@ -1,0 +1,181 @@
+type: custom:apexcharts-card
+grid_options:
+  columns: full
+header:
+  title: Stromerzeugung mit PV-Anlage – Messwerte und Prognose (Solar Forecast ML)
+  show: true
+  standard_format: true
+  show_states: true
+  colorize_states: true
+apex_config:
+  chart:
+    height: 250px
+  tooltip:
+    enabled: true
+    shared: true
+    followCursor: true
+graph_span: 0.999d
+now:
+  show: true
+  color: blue
+  label: jetzt
+span:
+  start: day
+  offset: "-0day"
+all_series_config:
+  type: area
+  opacity: 0.9
+  stroke_width: 1
+yaxis:
+  - id: kW
+    show: true
+    min: 0
+    apex_config:
+      tickAmount: 5
+  - id: capacity
+    show: true
+    opposite: true
+    decimals: 0
+    max: 100
+    min: 0
+    apex_config:
+      rotate: 90
+      tickAmount: 5
+  - id: header_only
+    show: false
+series:
+  - entity: sensor.senec_battery_charge_percent
+    name: Batterie
+    float_precision: 0
+    type: area
+    color: green
+    stroke_width: 2
+    opacity: 0.05
+    yaxis_id: capacity
+    extend_to: now
+    show:
+      legend_value: true
+      in_header: false
+    group_by:
+      func: last
+      duration: 5m
+  - entity: sensor.senec_house_power
+    name: Verbrauch
+    float_precision: 3
+    type: area
+    color: red
+    stroke_width: 2
+    opacity: 0.1
+    yaxis_id: kW
+    unit: kW
+    transform: return x/1000;
+    extend_to: now
+    show:
+      legend_value: true
+      in_header: false
+    group_by:
+      func: avg
+      duration: 5m
+  - entity: sensor.senec_solar_generated_power
+    name: Solarerzeugung
+    float_precision: 3
+    color: orange
+    stroke_width: 2
+    opacity: 0.6
+    yaxis_id: kW
+    unit: kW
+    transform: return x/1000;
+    extend_to: now
+    show:
+      legend_value: true
+      in_header: false
+    group_by:
+      func: avg
+      duration: 5m
+  - entity: sensor.none_power
+    name: SFML Max. Peak heute
+    float_precision: 3
+    type: line
+    color: grey
+    stroke_width: 2
+    opacity: 0.6
+    yaxis_id: kW
+    unit: kW
+    transform: return x/1000;
+    extend_to: now
+    show:
+      legend_value: true
+      in_header: false
+    group_by:
+      func: last
+      duration: 30m
+  - entity: sensor.none_expected_daily_production
+    yaxis_id: header_only
+    name: Prognose heute
+    float_precision: 2
+    unit: " kWh"
+    show:
+      legend_value: true
+      in_header: true
+      in_chart: false
+  - entity: sensor.none_forecast_today_remaining
+    yaxis_id: header_only
+    name: Prognose heute Rest
+    float_precision: 2
+    unit: " kWh"
+    show:
+      legend_value: true
+      in_header: true
+      in_chart: false
+  - entity: sensor.none_forecast_tomorrow
+    yaxis_id: header_only
+    name: Prognose morgen
+    float_precision: 2
+    unit: " kWh"
+    show:
+      legend_value: true
+      in_header: true
+      in_chart: false
+  - entity: sensor.none_energy
+    yaxis_id: header_only
+    name: Prognose übermorgen
+    float_precision: 2
+    unit: " kWh"
+    show:
+      legend_value: true
+      in_header: true
+      in_chart: false
+  - entity: sensor.solar_forecast_ml_next_hour_forecast
+    yaxis_id: header_only
+    name: Nächste Stunde
+    float_precision: 2
+    unit: " kWh"
+    show:
+      legend_value: true
+      in_header: true
+      in_chart: false
+  - entity: sensor.solar_forecast_ml_active_prediction_model
+    yaxis_id: header_only
+    name: Modell
+    show:
+      legend_value: true
+      in_header: true
+      in_chart: false
+  - entity: sensor.solar_forecast_ml_ai_metrics
+    yaxis_id: header_only
+    name: AI Metrics
+    show:
+      legend_value: true
+      in_header: true
+      in_chart: false
+  - entity: update.solar_forecast_ml_update
+    yaxis_id: header_only
+    name: Letztes Update
+    float_precision: 0
+    unit: " min."
+    transform: return (Date.now() - new Date(x).getTime()) / 1000 / 60;
+    show:
+      legend_value: true
+      in_header: true
+      in_chart: false
+

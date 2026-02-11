@@ -1,0 +1,174 @@
+type: custom:apexcharts-card
+grid_options:
+  columns: full
+header:
+  title: Stromerzeugung mit PV-Anlage – Messwerte und Prognose (Solcast PV Forecast)
+  show: true
+  standard_format: true
+  show_states: true
+  colorize_states: true
+apex_config:
+  chart:
+    height: 250px
+  tooltip:
+    enabled: true
+    shared: true
+    followCursor: true
+graph_span: 0.999d
+now:
+  show: true
+  color: blue
+  label: jetzt
+span:
+  start: day
+  offset: "-0day"
+all_series_config:
+  type: area
+  opacity: 0.9
+  stroke_width: 1
+yaxis:
+  - id: kW
+    show: true
+    min: 0
+    apex_config:
+      tickAmount: 5
+  - id: capacity
+    show: true
+    opposite: true
+    decimals: 0
+    max: 100
+    min: 0
+    apex_config:
+      show: true
+      rotate: 90
+      tickAmount: 5
+  - id: header_only
+    show: false
+series:
+  - entity: sensor.senec_battery_charge_percent
+    name: Batterie
+    float_precision: 0
+    type: area
+    color: green
+    stroke_width: 2
+    opacity: 0.05
+    yaxis_id: capacity
+    extend_to: now
+    show:
+      legend_value: true
+      in_header: false
+    group_by:
+      func: last
+      duration: 5m
+  - entity: sensor.senec_house_power
+    name: Verbrauch
+    float_precision: 3
+    type: area
+    color: red
+    stroke_width: 2
+    opacity: 0.1
+    yaxis_id: kW
+    unit: kW
+    transform: return x/1000;
+    extend_to: now
+    show:
+      legend_value: true
+      in_header: false
+    group_by:
+      func: avg
+      duration: 5m
+  - entity: sensor.senec_solar_generated_power
+    name: Solarerzeugung
+    float_precision: 3
+    color: orange
+    stroke_width: 2
+    opacity: 0.6
+    yaxis_id: kW
+    unit: kW
+    transform: return x/1000;
+    extend_to: now
+    show:
+      legend_value: true
+      in_header: false
+    group_by:
+      func: avg
+      duration: 5m
+  - entity: sensor.solcast_pv_forecast_power_now
+    name: Solcast aktuell
+    float_precision: 3
+    type: line
+    color: blue
+    stroke_width: 2
+    opacity: 0.6
+    yaxis_id: kW
+    unit: kW
+    transform: return x/1000;
+    extend_to: now
+    show:
+      legend_value: true
+      in_header: false
+    group_by:
+      func: avg
+      duration: 5m
+  - entity: sensor.solcast_pv_forecast_forecast_today
+    name: Prognose heute
+    extend_to: false
+    color: grey
+    opacity: 0.3
+    stroke_width: 2
+    yaxis_id: kW
+    show:
+      legend_value: false
+      in_header: false
+    data_generator: |
+      return entity.attributes.detailedForecast.map((entry) => {
+            return [new Date(entry.period_start), entry.pv_estimate];
+          });
+  - entity: sensor.solcast_pv_forecast_forecast_today
+    yaxis_id: header_only
+    name: Prognose heute
+    float_precision: 1
+    color: grey
+    show:
+      legend_value: true
+      in_header: true
+      in_chart: false
+  - entity: sensor.tt_solar_generated
+    yaxis_id: header_only
+    name: Heute bis jetzt
+    float_precision: 1
+    color: orange
+    show:
+      legend_value: true
+      in_header: true
+      in_chart: false
+  - entity: sensor.solcast_pv_forecast_forecast_remaining_today
+    yaxis_id: header_only
+    name: Prognose heute Rest
+    float_precision: 1
+    color: grey
+    show:
+      legend_value: true
+      in_header: true
+      in_chart: false
+  - entity: sensor.solcast_pv_forecast_forecast_tomorrow
+    yaxis_id: header_only
+    name: Prognose morgen
+    float_precision: 1
+    color: grey
+    show:
+      legend_value: true
+      in_header: true
+      in_chart: false
+  - entity: sensor.solcast_pv_forecast_api_last_polled
+    yaxis_id: header_only
+    name: Letztes Update
+    float_precision: 0
+    color: green
+    unit: " min."
+    transform: return ((Date.now()) - (new Date(x).getTime())) / 60 / 60 / 24
+    show:
+      legend_value: true
+      in_header: true
+      in_chart: false
+
