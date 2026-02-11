@@ -92,27 +92,49 @@ series:
     group_by:
       func: avg
       duration: 5m
-  - entity: sensor.none_power
-    name: SFML Max. Peak heute
-    float_precision: 3
-    type: line
+  - entity: sensor.solar_forecast_ml_next_hour_forecast
+    name: SFML Prognose
+    extend_to: false
     color: grey
+    opacity: 0.3
     stroke_width: 2
-    opacity: 0.6
     yaxis_id: kW
-    unit: kW
-    transform: return x/1000;
-    extend_to: now
     show:
-      legend_value: true
+      legend_value: false
       in_header: false
-    group_by:
-      func: last
-      duration: 30m
+    data_generator: |
+      var today = new Date();
+      var points = entity.attributes.hours_list.map((entry) => {
+        var parts = entry.time.split(':');
+        var date = new Date(today.getFullYear(), today.getMonth(), today.getDate(), parseInt(parts[0]), parseInt(parts[1]));
+        return [date, entry.kwh];
+      });
+      if (points.length > 0) {
+        points.unshift([new Date(), points[0][1]]);
+      }
+      return points;
   - entity: sensor.none_expected_daily_production
     yaxis_id: header_only
     name: Prognose heute
-    float_precision: 2
+    float_precision: 1
+    unit: " kWh"
+    show:
+      legend_value: true
+      in_header: true
+      in_chart: false
+  - entity: sensor.tt_solar_generated
+    yaxis_id: header_only
+    name: Heute bis jetzt
+    float_precision: 1
+    color: orange
+    show:
+      legend_value: true
+      in_header: true
+      in_chart: false
+  - entity: sensor.solar_forecast_ml_next_hour_forecast
+    yaxis_id: header_only
+    name: Nächste Stunde
+    float_precision: 1
     unit: " kWh"
     show:
       legend_value: true
@@ -121,7 +143,7 @@ series:
   - entity: sensor.none_forecast_today_remaining
     yaxis_id: header_only
     name: Prognose heute Rest
-    float_precision: 2
+    float_precision: 1
     unit: " kWh"
     show:
       legend_value: true
@@ -130,7 +152,7 @@ series:
   - entity: sensor.none_forecast_tomorrow
     yaxis_id: header_only
     name: Prognose morgen
-    float_precision: 2
+    float_precision: 1
     unit: " kWh"
     show:
       legend_value: true
@@ -139,43 +161,9 @@ series:
   - entity: sensor.none_energy
     yaxis_id: header_only
     name: Prognose übermorgen
-    float_precision: 2
+    float_precision: 1
     unit: " kWh"
     show:
       legend_value: true
       in_header: true
       in_chart: false
-  - entity: sensor.solar_forecast_ml_next_hour_forecast
-    yaxis_id: header_only
-    name: Nächste Stunde
-    float_precision: 2
-    unit: " kWh"
-    show:
-      legend_value: true
-      in_header: true
-      in_chart: false
-  - entity: sensor.solar_forecast_ml_active_prediction_model
-    yaxis_id: header_only
-    name: Modell
-    show:
-      legend_value: true
-      in_header: true
-      in_chart: false
-  - entity: sensor.solar_forecast_ml_ai_metrics
-    yaxis_id: header_only
-    name: AI Metrics
-    show:
-      legend_value: true
-      in_header: true
-      in_chart: false
-  - entity: update.solar_forecast_ml_update
-    yaxis_id: header_only
-    name: Letztes Update
-    float_precision: 0
-    unit: " min."
-    transform: return (Date.now() - new Date(x).getTime()) / 1000 / 60;
-    show:
-      legend_value: true
-      in_header: true
-      in_chart: false
-
