@@ -2,6 +2,10 @@
 
 Home Assistant Dashboard-Cards zur Visualisierung von PV-Prognosen und Echtzeit-Messwerten mit [ApexCharts Card](https://github.com/RomRider/apexcharts-card).
 
+Die Cards zeigen auf einen Blick, wie gut die ML-Prognose mit der tatsächlichen Erzeugung übereinstimmt — sowohl für die Gesamtanlage als auch für einzelne Wechselrichter-Stränge. Sie eignen sich als Vorlage für eigene PV-Dashboards und können an beliebige Anlagen angepasst werden.
+
+![Screenshot](STATS_Prognose_Messung.png)
+
 ## Referenz-Installation
 
 Die Cards sind für folgende Anlage konfiguriert:
@@ -170,3 +174,25 @@ Die Batterie-Serie aus Solar_Forecast_ML.yaml / Solcast_PV_Forecast.yaml einfach
 - **SFML_Stats_*.yaml** zeigen DC-Werte (vor dem Wechselrichter) — Y-Achse: `kWh (DC)`
 
 DC-Werte sind ca. 3–5 % höher als AC-Werte (Wechselrichter-Verluste). Falls nur AC-Sensoren vorhanden sind, können alle Cards mit AC-Sensoren betrieben und die Achsenbeschriftung auf `kWh (AC)` geändert werden.
+
+## Farbschema und Aufbau
+
+Alle Cards verwenden ein einheitliches Farbschema:
+
+| Farbe | Bedeutung |
+|---|---|
+| **Orange** | Erzeugung / IST-Messwerte |
+| **Grau (gestrichelt)** | Prognose |
+| **Grün** | Batterie-Ladezustand |
+| **Rot** | Hausverbrauch |
+| **Blau (vertikale Linie)** | Aktuelle Uhrzeit |
+
+Jede Card besteht aus:
+- **Chart-Serien** — Kurven auf dem Diagramm (Messwerte als durchgezogene Fläche, Prognose als gestrichelte Fläche)
+- **Header-Serien** — Kennzahlen im Kartenkopf (IST-Summe, Prognose-Summe), ohne Darstellung im Chart
+
+Die Prognose-Daten werden per `data_generator` aus den JSON-Attributen der SQL-Sensoren gelesen. Echtzeit-Messwerte nutzen die HA-History mit 5-Minuten-Mittelwerten.
+
+## Lizenz
+
+Dieses Projekt steht frei zur Verfügung. Nutzung und Anpassung für eigene PV-Installationen ist ausdrücklich erwünscht.
