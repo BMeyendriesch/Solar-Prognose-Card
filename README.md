@@ -1,109 +1,74 @@
 # Solar-Prognose-Card
 
-## Overview
+Home Assistant Dashboard-Cards zur Visualisierung von PV-Prognosen und Echtzeit-Messwerten mit [ApexCharts Card](https://github.com/RomRider/apexcharts-card).
 
-Home Assistant dashboard cards for solar power monitoring and forecasting using the **ApexCharts Card** (`custom:apexcharts-card`). YAML configurations provide forecast visualizations for a SENEC battery/solar system with Piko inverter:
+## Referenz-Installation
 
-- **Solar_Forecast_ML.yaml** — „PV-Prognose und Messwerte (Solar Forecast ML)" — AC-Messwerte (SENEC) und ML-Prognose
-- **Solcast_PV_Forecast.yaml** — Uses the Solcast API (cloud-based forecast service)
-- **SFML_Stats_Gesamt.yaml** — „PV-Prognose und Ertrag" — DC-Gesamtertrag vs. Prognose (full width)
-- **SFML_Stats_String_Ost.yaml** — „Strang Ost" — DC-Ertrag vs. Prognose (Gruppe 1)
-- **SFML_Stats_String_West.yaml** — „Strang West" — DC-Ertrag vs. Prognose (Gruppe 2)
-- **SFML_Stats_String_Sued.yaml** — „Strang Süd" — DC-Ertrag vs. Prognose (Gruppe 3)
+Die Cards sind für folgende Anlage konfiguriert:
 
-All UI labels are in **German**.
+| Komponente | Details |
+|---|---|
+| **Batteriespeicher** | SENEC (7,5 kWh Kapazität) |
+| **Wechselrichter** | Piko mit 3 DC-Strängen (Ost / West / Süd) |
+| **Prognose-Integration** | [Solar Forecast ML](https://github.com/bremme/home-assistant-solar-forecast-ml) (lokale ML-Prognose) |
+| **Alternative Prognose** | [Solcast PV Forecast](https://github.com/BJReplay/ha-solcast-solar) (Cloud-basiert) |
 
-## Architecture
+## Cards
 
-### Solar_Forecast_ML / Solcast cards
+| Datei | Beschreibung |
+|---|---|
+| **Solar_Forecast_ML.yaml** | Gesamtübersicht: Batterie (kWh), Verbrauch, Solarerzeugung (AC) und ML-Prognose |
+| **Solcast_PV_Forecast.yaml** | Wie oben, aber mit Solcast-Prognose statt Solar Forecast ML |
+| **SFML_Stats_Gesamt.yaml** | Prognose vs. Ertrag: Gesamtanlage (volle Breite) |
+| **SFML_Stats_String_Ost.yaml** | Prognose vs. Ertrag: Strang Ost |
+| **SFML_Stats_String_West.yaml** | Prognose vs. Ertrag: Strang West |
+| **SFML_Stats_String_Sued.yaml** | Prognose vs. Ertrag: Strang Süd |
 
-1. **Chart series:** Battery in kWh (green, converted from SOC % × 7.5 kWh), house power in kW (red), solar generation in kW (orange), forecast line (grey)
-2. **Header-only series (`header_only` y-axis, `in_chart: false`):** Display forecast values as text in the card header without plotting on the chart
-3. **Y-axes:** `kW` (primary, kWh (AC) label), `header_only` (hidden, display-only)
+## Voraussetzungen
 
-Key differences:
-- **Solcast** uses `data_generator` with JavaScript to map `entity.attributes.detailedForecast` into chart data points
-- **Solar Forecast ML** uses `sensor.sfml_tagesprognose` (SQL-Sensor) with `data_generator` to map `entity.attributes.hourly_forecast` into full-day chart data points
+- [Home Assistant](https://www.home-assistant.io/) mit [ApexCharts Card](https://github.com/RomRider/apexcharts-card) (HACS)
+- [Solar Forecast ML](https://github.com/bremme/home-assistant-solar-forecast-ml) Integration
+- SQL-Sensoren (siehe Einrichtung unten)
 
-### SFML Stats cards (Prognose vs. Messung)
+## Installation
 
-1. **Chart series:** IST/Tatsächlich (orange, solid area) + Prognose (grey, dashed area via `dashArray`)
-2. **Header-only series:** IST-Summe (orange) + Prognose heute (grey) — via `data_generator` for reliable `float_precision`
-3. **Y-axes:** single axis with `kWh (DC)` label, `header_only` (hidden)
-4. **Data sources:**
-   - **Gesamt IST curve:** `sensor.senec_solar_generated_power` (AC, W→kW), IST header: `sensor.sfml_pv_gesamt_yield_daily`
-   - **Strang Ost/West/Süd IST curves:** `sensor.piko_wechselrichter_dc_1/2/3_power` (DC, W→kW), IST headers: `sensor.sfml_pv_ost/west/sued_yield_daily`
-   - **Prognose curves + headers:** SQL-Sensoren `sensor.sfml_stats_*` (attributes `hourly_data`, `prediction_total`)
+1. YAML-Datei herunterladen
+2. Im HA-Dashboard eine neue Card anlegen → "Manuell (YAML)" wählen
+3. YAML-Inhalt einfügen
+4. Sensoren an die eigene Installation anpassen (siehe [Anpassung an andere Installationen](#anpassung-an-andere-installationen))
 
-## Conventions
+## SQL-Sensoren einrichten
 
-- Power sensor values are in **Watts** and converted to **kW** via `transform: return x/1000;`
-- Real-time series use `extend_to: now` and `group_by` with 5-minute intervals
-- Forecast/prediction series use 30-minute grouping or `data_generator`
-- Color scheme: green=battery, red=consumption, orange=generation/IST, grey=forecast/prognose, blue=now-line
-- Default series config: `type: area`, `opacity: 0.9`, `stroke_width: 1`
+Die Cards benötigen SQL-Sensoren, die Daten direkt aus der `solar_forecast.db` von Solar Forecast ML lesen. Diese werden **manuell über die HA-Oberfläche** angelegt (nicht per YAML).
 
-## No Build System
+### Gemeinsame Einstellungen
 
-These are raw YAML configuration files consumed directly by Home Assistant. There is no build, lint, or test pipeline. To deploy, paste the YAML into a Home Assistant Lovelace dashboard card configuration (manual YAML mode).
-
-## Required Home Assistant Integrations
-
-- **SENEC** — `sensor.senec_battery_charge_percent`, `sensor.senec_house_power`, `sensor.senec_solar_generated_power`
-- **Piko Wechselrichter** — `sensor.piko_wechselrichter_dc_1_power` (Ost), `sensor.piko_wechselrichter_dc_2_power` (West), `sensor.piko_wechselrichter_dc_3_power` (Süd)
-- **Solar Forecast ML** — `sensor.solar_forecast_ml_*`, `sensor.none_*`, `update.solar_forecast_ml_update`, `sensor.sfml_pv_gesamt_yield_daily`, `sensor.sfml_pv_ost_yield_daily`, `sensor.sfml_pv_west_yield_daily`, `sensor.sfml_pv_sued_yield_daily`
-- **Solcast PV Forecast** — `sensor.solcast_pv_forecast_*`
-- **SQL Integration** — `sensor.sfml_tagesprognose`, `sensor.sfml_stats_gesamt`, `sensor.sfml_stats_string_ost`, `sensor.sfml_stats_string_west`, `sensor.sfml_stats_string_sued` (manuell angelegt, siehe unten)
-- **Custom** — `sensor.tt_solar_generated` (total daily solar generation)
-- **Frontend** — [apexcharts-card](https://github.com/RomRider/apexcharts-card) custom Lovelace card
-
-## SQL-Sensor "SFML Tagesprognose" manuell anlegen
-
-Die Solar Forecast ML Card benötigt einen SQL-Sensor, der die stündlichen Prognosen aus der lokalen SQLite-Datenbank liest. Dieser Sensor muss **manuell über die HA-Oberfläche** angelegt werden (nicht per YAML).
-
-### Anleitung
-
-1. **Einstellungen → Geräte & Dienste → Integration hinzufügen → "SQL"** suchen und auswählen
-2. Folgende Felder ausfüllen:
+Alle SQL-Sensoren anlegen über **Einstellungen → Geräte & Dienste → Integration hinzufügen → "SQL"**:
 
 | Feld | Wert |
 |---|---|
-| **Name** | `SFML Tagesprognose` |
 | **Database URL** | `sqlite:////config/solar_forecast_ml/solar_forecast.db` |
 | **Column** | `state` |
 | **Unit of measurement** | `kWh` |
 
-3. **Query** (einzeilig einfügen):
+### Sensor 1: SFML Tagesprognose
 
+Wird von **Solar_Forecast_ML.yaml** verwendet.
+
+**Name:** `SFML Tagesprognose` → Entity: `sensor.sfml_tagesprognose`
+
+**Query:**
 ```sql
 SELECT ROUND(SUM(prediction_kwh), 1) as state, json_group_array(json_object('hour', target_hour, 'kwh', ROUND(prediction_kwh, 3))) as hourly_forecast FROM hourly_predictions WHERE target_date = date('now', 'localtime') ORDER BY target_hour;
 ```
 
-4. Absenden — HA legt `sensor.sfml_tagesprognose` an
+**Ergebnis:**
+- **State** = Tages-Prognosesumme in kWh (z.B. `4.2`)
+- **Attribut `hourly_forecast`** = JSON-Array: `[{"hour": 0, "kwh": 0.0}, {"hour": 1, "kwh": 0.0}, ...]`
 
-### Verifikation
+### Sensor 2: SFML Stats Gesamt
 
-Unter **Entwicklerwerkzeuge → Zustände** nach `sfml_tagesprognose` suchen:
-- **State** = Tagessumme in kWh (z.B. `4.2`)
-- **Attribut `hourly_forecast`** = JSON-Array mit 24 Einträgen: `[{"hour": 0, "kwh": 0.0}, {"hour": 1, "kwh": 0.0}, ...]`
-
-### Hintergrund
-
-Die bisherige Prognosekurve nutzte `sensor.solar_forecast_ml_next_hour_forecast` mit `hours_list` — diese Liste enthält nur noch verbleibende Stunden des Tages, weshalb die Kurve im Tagesverlauf schrumpfte. Der SQL-Sensor liest stattdessen alle 24 Stunden aus `hourly_predictions`, sodass die Prognosekurve den gesamten Tag abdeckt.
-
-## SQL-Sensoren "SFML Stats" für Prognose vs. Messung
-
-Die 4 Stats-Cards benötigen jeweils einen SQL-Sensor, der Prognose- und IST-Werte aus `solar_forecast.db` liest. Alle **manuell über die HA-Oberfläche** anlegen.
-
-### Gemeinsame Felder
-
-| Feld | Wert |
-|---|---|
-| **Database URL** | `sqlite:////config/solar_forecast_ml/solar_forecast.db` |
-| **Column** | `state` |
-| **Unit of measurement** | `kWh` |
-
-### Sensor 1: SFML Stats Gesamt
+Wird von **SFML_Stats_Gesamt.yaml** verwendet.
 
 **Name:** `SFML Stats Gesamt` → Entity: `sensor.sfml_stats_gesamt`
 
@@ -112,7 +77,14 @@ Die 4 Stats-Cards benötigen jeweils einen SQL-Sensor, der Prognose- und IST-Wer
 SELECT ROUND(COALESCE(SUM(actual_kwh), 0), 2) as state, ROUND(SUM(prediction_kwh), 2) as prediction_total, CASE WHEN COALESCE(SUM(actual_kwh), 0) = 0 AND SUM(prediction_kwh) = 0 THEN 100 WHEN COALESCE(SUM(actual_kwh), 0) = 0 OR SUM(prediction_kwh) = 0 THEN 0 ELSE ROUND(MIN(COALESCE(SUM(actual_kwh), 0), SUM(prediction_kwh)) * 100.0 / MAX(COALESCE(SUM(actual_kwh), 0), SUM(prediction_kwh)), 0) END as accuracy, json_group_array(json_object('hour', target_hour, 'pred', ROUND(prediction_kwh, 4), 'actual', actual_kwh)) as hourly_data FROM (SELECT target_hour, prediction_kwh, actual_kwh FROM hourly_predictions WHERE target_date = date('now', 'localtime') ORDER BY target_hour);
 ```
 
-### Sensor 2: SFML Stats String Ost
+**Ergebnis:**
+- **State** = IST-Summe in kWh
+- **Attribut `prediction_total`** = Prognose-Summe in kWh
+- **Attribut `hourly_data`** = JSON-Array: `[{"hour": 0, "pred": 0.0, "actual": null}, ...]`
+
+### Sensor 3: SFML Stats String Ost
+
+Wird von **SFML_Stats_String_Ost.yaml** verwendet.
 
 **Name:** `SFML Stats String Ost` → Entity: `sensor.sfml_stats_string_ost`
 
@@ -121,28 +93,80 @@ SELECT ROUND(COALESCE(SUM(actual_kwh), 0), 2) as state, ROUND(SUM(prediction_kwh
 SELECT ROUND(COALESCE(SUM(actual_kwh), 0), 3) as state, ROUND(SUM(prediction_kwh), 3) as prediction_total, CASE WHEN COALESCE(SUM(actual_kwh), 0) = 0 AND SUM(prediction_kwh) = 0 THEN 100 WHEN COALESCE(SUM(actual_kwh), 0) = 0 OR SUM(prediction_kwh) = 0 THEN 0 ELSE ROUND(MIN(COALESCE(SUM(actual_kwh), 0), SUM(prediction_kwh)) * 100.0 / MAX(COALESCE(SUM(actual_kwh), 0), SUM(prediction_kwh)), 0) END as accuracy, json_group_array(json_object('hour', target_hour, 'pred', ROUND(prediction_kwh, 4), 'actual', actual_kwh)) as hourly_data FROM (SELECT hp.target_hour as target_hour, ppg.prediction_kwh as prediction_kwh, ppg.actual_kwh as actual_kwh FROM hourly_predictions hp JOIN prediction_panel_groups ppg ON hp.prediction_id = ppg.prediction_id WHERE hp.target_date = date('now', 'localtime') AND ppg.group_name = 'Gruppe 1' ORDER BY hp.target_hour);
 ```
 
-### Sensor 3: SFML Stats String West
+### Sensor 4: SFML Stats String West
 
 **Name:** `SFML Stats String West` → Entity: `sensor.sfml_stats_string_west`
 
-**Query:** Gleich wie String Ost, aber `ppg.group_name = 'Gruppe 2'`
+**Query:** Gleich wie Sensor 3, aber `ppg.group_name = 'Gruppe 2'`
 
-### Sensor 4: SFML Stats String Sued
+### Sensor 5: SFML Stats String Sued
 
 **Name:** `SFML Stats String Sued` → Entity: `sensor.sfml_stats_string_sued`
 
-**Query:** Gleich wie String Ost, aber `ppg.group_name = 'Gruppe 3'`
+**Query:** Gleich wie Sensor 3, aber `ppg.group_name = 'Gruppe 3'`
 
 ### Verifikation
 
-Unter **Entwicklerwerkzeuge → Zustände** nach `sfml_stats` suchen. Jeder Sensor hat:
-- **State** = IST-Summe in kWh (0.0 wenn noch keine Messdaten)
-- **Attribut `prediction_total`** = Prognose-Summe in kWh
-- **Attribut `accuracy`** = Genauigkeit in % (MIN/MAX-Verhältnis)
-- **Attribut `hourly_data`** = JSON-Array mit 24 Einträgen: `[{"hour": 0, "pred": 0.0, "actual": null}, ...]`
+Unter **Entwicklerwerkzeuge → Zustände** nach dem Sensor-Namen suchen und prüfen, ob State und Attribute korrekt befüllt sind.
 
-### Datenquellen
+## Anpassung an andere Installationen
 
-- **Gesamt:** Tabelle `hourly_predictions` → `prediction_kwh` (Prognose) und `actual_kwh` (IST)
-- **Panel-Gruppen:** Tabelle `prediction_panel_groups` (JOIN über `prediction_id`) → `prediction_kwh` und `actual_kwh` pro Gruppe
-- Mapping: **Gruppe 1 = String Ost**, **Gruppe 2 = String West**, **Gruppe 3 = String Süd**
+Die Cards verwenden Sensoren, die spezifisch für die Referenz-Installation sind. Hier die nötigen Anpassungen:
+
+### Batterie- und Leistungssensoren ersetzen
+
+| Sensor in den YAMLs | Funktion | Anpassung |
+|---|---|---|
+| `sensor.senec_battery_charge_percent` | Batterie-SOC in % | Eigenen Batterie-SOC-Sensor eintragen. `transform` anpassen: `return x * KAPAZITÄT / 100;` (statt `7.5`) |
+| `sensor.senec_house_power` | Hausverbrauch in W | Eigenen Verbrauchssensor eintragen (muss W liefern) |
+| `sensor.senec_solar_generated_power` | PV-Gesamtleistung in W (AC) | Eigenen AC-Leistungssensor eintragen |
+
+### Wechselrichter-Stränge (DC)
+
+| Sensor in den YAMLs | Funktion | Anpassung |
+|---|---|---|
+| `sensor.piko_wechselrichter_dc_1_power` | DC-Leistung Strang Ost | Eigenen DC-String-Sensor eintragen |
+| `sensor.piko_wechselrichter_dc_2_power` | DC-Leistung Strang West | Eigenen DC-String-Sensor eintragen |
+| `sensor.piko_wechselrichter_dc_3_power` | DC-Leistung Strang Süd | Eigenen DC-String-Sensor eintragen |
+
+Bei mehr oder weniger als 3 Strängen: Strang-Cards entsprechend duplizieren oder entfernen.
+
+### Tagesertrags-Sensoren (Header-Werte)
+
+| Sensor in den YAMLs | Funktion | Anpassung |
+|---|---|---|
+| `sensor.sfml_pv_gesamt_yield_daily` | Tagesertrag gesamt | Eigenen Tagesertrags-Sensor (kWh) eintragen |
+| `sensor.sfml_pv_ost_yield_daily` | Tagesertrag Strang Ost | Eigenen Strang-Ertrags-Sensor eintragen |
+| `sensor.sfml_pv_west_yield_daily` | Tagesertrag Strang West | Eigenen Strang-Ertrags-Sensor eintragen |
+| `sensor.sfml_pv_sued_yield_daily` | Tagesertrag Strang Süd | Eigenen Strang-Ertrags-Sensor eintragen |
+| `sensor.tt_solar_generated` | Tagesertrag (in Solar_Forecast_ML.yaml) | Eigenen Tagesertrags-Sensor eintragen |
+
+### Panel-Gruppen in SQL-Queries
+
+Die Gruppennamen in den SQL-Queries (`Gruppe 1`, `Gruppe 2`, `Gruppe 3`) entsprechen der Konfiguration in Solar Forecast ML. Wenn die eigene Installation andere Gruppennamen verwendet, die Queries entsprechend anpassen:
+
+```sql
+-- Eigene Gruppennamen prüfen:
+SELECT DISTINCT group_name FROM prediction_panel_groups;
+```
+
+### Batterie-Kapazität
+
+In **Solar_Forecast_ML.yaml** wird der SOC (%) in kWh umgerechnet:
+
+```yaml
+transform: return x * 7.5 / 100;
+```
+
+Den Wert `7.5` durch die eigene Batterie-Kapazität in kWh ersetzen.
+
+### Keine Batterie vorhanden?
+
+Die Batterie-Serie aus Solar_Forecast_ML.yaml / Solcast_PV_Forecast.yaml einfach löschen.
+
+### AC vs. DC
+
+- **Solar_Forecast_ML.yaml** zeigt AC-Werte (nach dem Wechselrichter) — Y-Achse: `kWh (AC)`
+- **SFML_Stats_*.yaml** zeigen DC-Werte (vor dem Wechselrichter) — Y-Achse: `kWh (DC)`
+
+DC-Werte sind ca. 3–5 % höher als AC-Werte (Wechselrichter-Verluste). Falls nur AC-Sensoren vorhanden sind, können alle Cards mit AC-Sensoren betrieben und die Achsenbeschriftung auf `kWh (AC)` geändert werden.
