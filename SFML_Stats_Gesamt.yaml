@@ -2,7 +2,7 @@ type: custom:apexcharts-card
 grid_options:
   columns: full
 header:
-  title: "Tages-Energieertrag (Echtzeit-Scan)"
+  title: "PV-Prognose und Ertrag"
   show: true
   standard_format: true
   show_states: true
@@ -38,7 +38,7 @@ yaxis:
     apex_config:
       tickAmount: 5
       title:
-        text: kWh
+        text: kWh (DC)
   - id: header_only
     show: false
 series:
@@ -76,20 +76,23 @@ series:
         var date = new Date(today.getFullYear(), today.getMonth(), today.getDate(), entry.hour, 30);
         return [date, entry.pred];
       });
-  - entity: sensor.tt_solar_generated
+  - entity: sensor.sfml_pv_gesamt_yield_daily
     yaxis_id: header_only
     name: Ertrag
     color: orange
     float_precision: 1
+    unit: " kWh"
     show:
       legend_value: true
       in_header: true
       in_chart: false
+    data_generator: |
+      return [[new Date(), parseFloat(entity.state)]];
   - entity: sensor.sfml_stats_gesamt
     yaxis_id: header_only
     name: Prognose heute
     color: grey
-    float_precision: 2
+    float_precision: 1
     unit: " kWh"
     show:
       legend_value: true

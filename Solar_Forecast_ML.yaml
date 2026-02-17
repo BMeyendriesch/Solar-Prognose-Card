@@ -2,7 +2,7 @@ type: custom:apexcharts-card
 grid_options:
   columns: full
 header:
-  title: Stromerzeugung mit PV-Anlage – Messwerte und Prognose (Solar Forecast ML)
+  title: PV-Prognose und Messwerte (Solar Forecast ML)
   show: true
   standard_format: true
   show_states: true
@@ -32,7 +32,7 @@ yaxis:
     apex_config:
       tickAmount: 5
       title:
-        text: kWh
+        text: kWh (AC)
   - id: header_only
     show: false
 series:

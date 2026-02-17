@@ -1,6 +1,6 @@
 type: custom:apexcharts-card
 header:
-  title: "String Ost"
+  title: "Strang Ost"
   show: true
   standard_format: true
   show_states: true
@@ -36,36 +36,26 @@ yaxis:
     apex_config:
       tickAmount: 5
       title:
-        text: kWh
+        text: kWh (DC)
   - id: header_only
     show: false
 series:
-  - entity: sensor.sfml_stats_string_ost
+  - entity: sensor.piko_wechselrichter_dc_1_power
     name: IST
+    float_precision: 3
     color: orange
-    opacity: 0.6
     stroke_width: 2
+    opacity: 0.6
     yaxis_id: kWh
-    unit: " kWh"
-    extend_to: false
+    unit: kW
+    transform: return x/1000;
+    extend_to: now
     show:
       legend_value: false
       in_header: false
-    data_generator: |
-      var today = new Date();
-      var now = today.getTime();
-      var data = JSON.parse(entity.attributes.hourly_data);
-      var points = data
-        .filter((entry) => entry.actual !== null)
-        .map((entry) => {
-          var date = new Date(today.getFullYear(), today.getMonth(), today.getDate(), entry.hour, 30);
-          return [date, entry.actual];
-        })
-        .filter((point) => point[0].getTime() <= now);
-      if (points.length > 0) {
-        points.push([new Date(now), points[points.length - 1][1]]);
-      }
-      return points;
+    group_by:
+      func: avg
+      duration: 5m
   - entity: sensor.sfml_stats_string_ost
     name: Prognose
     color: grey
@@ -84,21 +74,23 @@ series:
         var date = new Date(today.getFullYear(), today.getMonth(), today.getDate(), entry.hour, 30);
         return [date, entry.pred];
       });
-  - entity: sensor.sfml_stats_string_ost
+  - entity: sensor.sfml_pv_ost_yield_daily
     yaxis_id: header_only
     name: "IST"
     color: orange
-    float_precision: 3
+    float_precision: 1
     unit: " kWh"
     show:
       legend_value: true
       in_header: true
       in_chart: false
+    data_generator: |
+      return [[new Date(), parseFloat(entity.state)]];
   - entity: sensor.sfml_stats_string_ost
     yaxis_id: header_only
     name: Prognose heute
     color: grey
-    float_precision: 3
+    float_precision: 1
     unit: " kWh"
     show:
       legend_value: true
