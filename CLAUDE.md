@@ -21,7 +21,7 @@ Both cards share the same base structure:
 
 Key differences between the two cards:
 - **Solcast** uses `data_generator` with JavaScript to map `entity.attributes.detailedForecast` into chart data points
-- **Solar Forecast ML** references dedicated `sensor.none_*` entities and includes AI model/metrics info
+- **Solar Forecast ML** uses `sensor.sfml_tagesprognose` (SQL-Sensor) with `data_generator` to map `entity.attributes.hourly_forecast` into full-day chart data points
 - Solcast's "Letztes Update" transform computes days (divides by `60/60/24`); ML version computes minutes (divides by `1000/60`)
 
 ## Conventions
@@ -41,5 +41,40 @@ These are raw YAML configuration files consumed directly by Home Assistant. Ther
 - **SENEC** — `sensor.senec_battery_charge_percent`, `sensor.senec_house_power`, `sensor.senec_solar_generated_power`
 - **Solar Forecast ML** — `sensor.solar_forecast_ml_*`, `sensor.none_*`, `update.solar_forecast_ml_update`
 - **Solcast PV Forecast** — `sensor.solcast_pv_forecast_*`
+- **SQL Integration** — `sensor.sfml_tagesprognose` (manuell angelegt, siehe unten)
 - **Custom** — `sensor.tt_solar_generated` (total daily solar generation)
 - **Frontend** — [apexcharts-card](https://github.com/RomRider/apexcharts-card) custom Lovelace card
+
+## SQL-Sensor "SFML Tagesprognose" manuell anlegen
+
+Die Solar Forecast ML Card benötigt einen SQL-Sensor, der die stündlichen Prognosen aus der lokalen SQLite-Datenbank liest. Dieser Sensor muss **manuell über die HA-Oberfläche** angelegt werden (nicht per YAML).
+
+### Anleitung
+
+1. **Einstellungen → Geräte & Dienste → Integration hinzufügen → "SQL"** suchen und auswählen
+2. Folgende Felder ausfüllen:
+
+| Feld | Wert |
+|---|---|
+| **Name** | `SFML Tagesprognose` |
+| **Database URL** | `sqlite:////config/solar_forecast_ml/solar_forecast.db` |
+| **Column** | `state` |
+| **Unit of measurement** | `kWh` |
+
+3. **Query** (einzeilig einfügen):
+
+```sql
+SELECT ROUND(SUM(prediction_kwh), 1) as state, json_group_array(json_object('hour', target_hour, 'kwh', ROUND(prediction_kwh, 3))) as hourly_forecast FROM hourly_predictions WHERE target_date = date('now', 'localtime') ORDER BY target_hour;
+```
+
+4. Absenden — HA legt `sensor.sfml_tagesprognose` an
+
+### Verifikation
+
+Unter **Entwicklerwerkzeuge → Zustände** nach `sfml_tagesprognose` suchen:
+- **State** = Tagessumme in kWh (z.B. `4.2`)
+- **Attribut `hourly_forecast`** = JSON-Array mit 24 Einträgen: `[{"hour": 0, "kwh": 0.0}, {"hour": 1, "kwh": 0.0}, ...]`
+
+### Hintergrund
+
+Die bisherige Prognosekurve nutzte `sensor.solar_forecast_ml_next_hour_forecast` mit `hours_list` — diese Liste enthält nur noch verbleibende Stunden des Tages, weshalb die Kurve im Tagesverlauf schrumpfte. Der SQL-Sensor liest stattdessen alle 24 Stunden aus `hourly_predictions`, sodass die Prognosekurve den gesamten Tag abdeckt.

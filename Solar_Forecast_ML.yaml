@@ -92,23 +92,7 @@ series:
     group_by:
       func: avg
       duration: 5m
-  - entity: sensor.solar_forecast_ml_next_hour_forecast
-    name: SFML aktuell
-    float_precision: 3
-    type: line
-    color: blue
-    stroke_width: 2
-    opacity: 0.6
-    yaxis_id: kW
-    unit: kW
-    extend_to: false
-    show:
-      legend_value: true
-      in_header: false
-    group_by:
-      func: avg
-      duration: 5m
-  - entity: sensor.solar_forecast_ml_next_hour_forecast
+  - entity: sensor.sfml_tagesprognose
     name: SFML Prognose
     extend_to: false
     color: grey
@@ -120,16 +104,12 @@ series:
       in_header: false
     data_generator: |
       var today = new Date();
-      var points = entity.attributes.hours_list.map((entry) => {
-        var parts = entry.time.split(':');
-        var date = new Date(today.getFullYear(), today.getMonth(), today.getDate(), parseInt(parts[0]), parseInt(parts[1]));
+      var data = JSON.parse(entity.attributes.hourly_forecast);
+      return data.map((entry) => {
+        var date = new Date(today.getFullYear(), today.getMonth(), today.getDate(), entry.hour, 30);
         return [date, entry.kwh];
       });
-      if (points.length > 0) {
-        points.unshift([new Date(), points[0][1]]);
-      }
-      return points;
-  - entity: sensor.none_expected_daily_production
+  - entity: sensor.sfml_tagesprognose
     yaxis_id: header_only
     name: Prognose heute
     float_precision: 1
