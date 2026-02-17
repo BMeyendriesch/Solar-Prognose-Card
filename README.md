@@ -4,7 +4,7 @@ Home Assistant Dashboard-Cards zur Visualisierung von PV-Prognosen und Echtzeit-
 
 Die Cards zeigen auf einen Blick, wie gut die ML-Prognose mit der tatsächlichen Erzeugung übereinstimmt — sowohl für die Gesamtanlage als auch für einzelne Wechselrichter-Stränge. Sie eignen sich als Vorlage für eigene PV-Dashboards und können an beliebige Anlagen angepasst werden.
 
-![Screenshot](STATS_Prognose_Messung.png)
+![Screenshot](SFML_Stats.png)
 
 ## Referenz-Installation
 
