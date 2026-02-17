@@ -4,36 +4,45 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Home Assistant dashboard cards for solar power monitoring and forecasting using the **ApexCharts Card** (`custom:apexcharts-card`). Two YAML configurations provide alternative forecast visualizations for a SENEC battery/solar system:
+Home Assistant dashboard cards for solar power monitoring and forecasting using the **ApexCharts Card** (`custom:apexcharts-card`). YAML configurations provide forecast visualizations for a SENEC battery/solar system with Piko inverter:
 
-- **Solar_Forecast_ML.yaml** — Uses the Solar Forecast ML integration (local ML-based predictions)
+- **Solar_Forecast_ML.yaml** — „PV-Prognose und Messwerte (Solar Forecast ML)" — AC-Messwerte (SENEC) und ML-Prognose
 - **Solcast_PV_Forecast.yaml** — Uses the Solcast API (cloud-based forecast service)
-- **SFML_Stats_Gesamt.yaml** — Prognose vs. Messung: Gesamtanlage (full width)
-- **SFML_Stats_String_Ost.yaml** — Prognose vs. Messung: String Ost (Gruppe 1)
-- **SFML_Stats_String_West.yaml** — Prognose vs. Messung: String West (Gruppe 2)
-- **SFML_Stats_String_Sued.yaml** — Prognose vs. Messung: String Süd (Gruppe 3)
+- **SFML_Stats_Gesamt.yaml** — „PV-Prognose und Ertrag" — DC-Gesamtertrag vs. Prognose (full width)
+- **SFML_Stats_String_Ost.yaml** — „Strang Ost" — DC-Ertrag vs. Prognose (Gruppe 1)
+- **SFML_Stats_String_West.yaml** — „Strang West" — DC-Ertrag vs. Prognose (Gruppe 2)
+- **SFML_Stats_String_Sued.yaml** — „Strang Süd" — DC-Ertrag vs. Prognose (Gruppe 3)
 
 All UI labels are in **German**.
 
 ## Architecture
 
-Both cards share the same base structure:
+### Solar_Forecast_ML / Solcast cards
 
-1. **Chart series (rendered on graph):** Battery charge % (green, secondary y-axis), house power consumption in kW (red), solar generation in kW (orange), plus a forecast line (grey/blue)
-2. **Header-only series (`header_only` y-axis, `in_chart: false`):** Display forecast values (today, remaining, tomorrow) and metadata as text in the card header without plotting on the chart
-3. **Y-axes:** `kW` (primary, power), `capacity` (secondary/opposite, battery %), `header_only` (hidden, display-only)
+1. **Chart series:** Battery in kWh (green, converted from SOC % × 7.5 kWh), house power in kW (red), solar generation in kW (orange), forecast line (grey)
+2. **Header-only series (`header_only` y-axis, `in_chart: false`):** Display forecast values as text in the card header without plotting on the chart
+3. **Y-axes:** `kW` (primary, kWh (AC) label), `header_only` (hidden, display-only)
 
-Key differences between the two cards:
+Key differences:
 - **Solcast** uses `data_generator` with JavaScript to map `entity.attributes.detailedForecast` into chart data points
 - **Solar Forecast ML** uses `sensor.sfml_tagesprognose` (SQL-Sensor) with `data_generator` to map `entity.attributes.hourly_forecast` into full-day chart data points
-- Solcast's "Letztes Update" transform computes days (divides by `60/60/24`); ML version computes minutes (divides by `1000/60`)
+
+### SFML Stats cards (Prognose vs. Messung)
+
+1. **Chart series:** IST/Tatsächlich (orange, solid area) + Prognose (grey, dashed area via `dashArray`)
+2. **Header-only series:** IST-Summe (orange) + Prognose heute (grey) — via `data_generator` for reliable `float_precision`
+3. **Y-axes:** single axis with `kWh (DC)` label, `header_only` (hidden)
+4. **Data sources:**
+   - **Gesamt IST curve:** `sensor.senec_solar_generated_power` (AC, W→kW), IST header: `sensor.sfml_pv_gesamt_yield_daily`
+   - **Strang Ost/West/Süd IST curves:** `sensor.piko_wechselrichter_dc_1/2/3_power` (DC, W→kW), IST headers: `sensor.sfml_pv_ost/west/sued_yield_daily`
+   - **Prognose curves + headers:** SQL-Sensoren `sensor.sfml_stats_*` (attributes `hourly_data`, `prediction_total`)
 
 ## Conventions
 
 - Power sensor values are in **Watts** and converted to **kW** via `transform: return x/1000;`
 - Real-time series use `extend_to: now` and `group_by` with 5-minute intervals
 - Forecast/prediction series use 30-minute grouping or `data_generator`
-- Color scheme: green=battery, red=consumption, orange=generation, blue=current/now, grey=forecast
+- Color scheme: green=battery, red=consumption, orange=generation/IST, grey=forecast/prognose, blue=now-line
 - Default series config: `type: area`, `opacity: 0.9`, `stroke_width: 1`
 
 ## No Build System
@@ -43,7 +52,8 @@ These are raw YAML configuration files consumed directly by Home Assistant. Ther
 ## Required Home Assistant Integrations
 
 - **SENEC** — `sensor.senec_battery_charge_percent`, `sensor.senec_house_power`, `sensor.senec_solar_generated_power`
-- **Solar Forecast ML** — `sensor.solar_forecast_ml_*`, `sensor.none_*`, `update.solar_forecast_ml_update`
+- **Piko Wechselrichter** — `sensor.piko_wechselrichter_dc_1_power` (Ost), `sensor.piko_wechselrichter_dc_2_power` (West), `sensor.piko_wechselrichter_dc_3_power` (Süd)
+- **Solar Forecast ML** — `sensor.solar_forecast_ml_*`, `sensor.none_*`, `update.solar_forecast_ml_update`, `sensor.sfml_pv_gesamt_yield_daily`, `sensor.sfml_pv_ost_yield_daily`, `sensor.sfml_pv_west_yield_daily`, `sensor.sfml_pv_sued_yield_daily`
 - **Solcast PV Forecast** — `sensor.solcast_pv_forecast_*`
 - **SQL Integration** — `sensor.sfml_tagesprognose`, `sensor.sfml_stats_gesamt`, `sensor.sfml_stats_string_ost`, `sensor.sfml_stats_string_west`, `sensor.sfml_stats_string_sued` (manuell angelegt, siehe unten)
 - **Custom** — `sensor.tt_solar_generated` (total daily solar generation)
