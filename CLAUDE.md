@@ -1,6 +1,8 @@
-# Solar-Prognose-Card
+# CLAUDE.md
 
-## Overview
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
 
 Home Assistant dashboard cards for solar power monitoring and forecasting using the **ApexCharts Card** (`custom:apexcharts-card`). YAML configurations provide forecast visualizations for a SENEC battery/solar system with Piko inverter:
 
