@@ -8,6 +8,10 @@ Home Assistant dashboard cards for solar power monitoring and forecasting using 
 
 - **Solar_Forecast_ML.yaml** — Uses the Solar Forecast ML integration (local ML-based predictions)
 - **Solcast_PV_Forecast.yaml** — Uses the Solcast API (cloud-based forecast service)
+- **SFML_Stats_Gesamt.yaml** — Prognose vs. Messung: Gesamtanlage (full width)
+- **SFML_Stats_String_Ost.yaml** — Prognose vs. Messung: String Ost (Gruppe 1)
+- **SFML_Stats_String_West.yaml** — Prognose vs. Messung: String West (Gruppe 2)
+- **SFML_Stats_String_Sued.yaml** — Prognose vs. Messung: String Süd (Gruppe 3)
 
 All UI labels are in **German**.
 
@@ -41,7 +45,7 @@ These are raw YAML configuration files consumed directly by Home Assistant. Ther
 - **SENEC** — `sensor.senec_battery_charge_percent`, `sensor.senec_house_power`, `sensor.senec_solar_generated_power`
 - **Solar Forecast ML** — `sensor.solar_forecast_ml_*`, `sensor.none_*`, `update.solar_forecast_ml_update`
 - **Solcast PV Forecast** — `sensor.solcast_pv_forecast_*`
-- **SQL Integration** — `sensor.sfml_tagesprognose` (manuell angelegt, siehe unten)
+- **SQL Integration** — `sensor.sfml_tagesprognose`, `sensor.sfml_stats_gesamt`, `sensor.sfml_stats_string_ost`, `sensor.sfml_stats_string_west`, `sensor.sfml_stats_string_sued` (manuell angelegt, siehe unten)
 - **Custom** — `sensor.tt_solar_generated` (total daily solar generation)
 - **Frontend** — [apexcharts-card](https://github.com/RomRider/apexcharts-card) custom Lovelace card
 
@@ -78,3 +82,59 @@ Unter **Entwicklerwerkzeuge → Zustände** nach `sfml_tagesprognose` suchen:
 ### Hintergrund
 
 Die bisherige Prognosekurve nutzte `sensor.solar_forecast_ml_next_hour_forecast` mit `hours_list` — diese Liste enthält nur noch verbleibende Stunden des Tages, weshalb die Kurve im Tagesverlauf schrumpfte. Der SQL-Sensor liest stattdessen alle 24 Stunden aus `hourly_predictions`, sodass die Prognosekurve den gesamten Tag abdeckt.
+
+## SQL-Sensoren "SFML Stats" für Prognose vs. Messung
+
+Die 4 Stats-Cards benötigen jeweils einen SQL-Sensor, der Prognose- und IST-Werte aus `solar_forecast.db` liest. Alle **manuell über die HA-Oberfläche** anlegen.
+
+### Gemeinsame Felder
+
+| Feld | Wert |
+|---|---|
+| **Database URL** | `sqlite:////config/solar_forecast_ml/solar_forecast.db` |
+| **Column** | `state` |
+| **Unit of measurement** | `kWh` |
+
+### Sensor 1: SFML Stats Gesamt
+
+**Name:** `SFML Stats Gesamt` → Entity: `sensor.sfml_stats_gesamt`
+
+**Query:**
+```sql
+SELECT ROUND(COALESCE(SUM(actual_kwh), 0), 2) as state, ROUND(SUM(prediction_kwh), 2) as prediction_total, CASE WHEN COALESCE(SUM(actual_kwh), 0) = 0 AND SUM(prediction_kwh) = 0 THEN 100 WHEN COALESCE(SUM(actual_kwh), 0) = 0 OR SUM(prediction_kwh) = 0 THEN 0 ELSE ROUND(MIN(COALESCE(SUM(actual_kwh), 0), SUM(prediction_kwh)) * 100.0 / MAX(COALESCE(SUM(actual_kwh), 0), SUM(prediction_kwh)), 0) END as accuracy, json_group_array(json_object('hour', target_hour, 'pred', ROUND(prediction_kwh, 4), 'actual', actual_kwh)) as hourly_data FROM (SELECT target_hour, prediction_kwh, actual_kwh FROM hourly_predictions WHERE target_date = date('now', 'localtime') ORDER BY target_hour);
+```
+
+### Sensor 2: SFML Stats String Ost
+
+**Name:** `SFML Stats String Ost` → Entity: `sensor.sfml_stats_string_ost`
+
+**Query:**
+```sql
+SELECT ROUND(COALESCE(SUM(actual_kwh), 0), 3) as state, ROUND(SUM(prediction_kwh), 3) as prediction_total, CASE WHEN COALESCE(SUM(actual_kwh), 0) = 0 AND SUM(prediction_kwh) = 0 THEN 100 WHEN COALESCE(SUM(actual_kwh), 0) = 0 OR SUM(prediction_kwh) = 0 THEN 0 ELSE ROUND(MIN(COALESCE(SUM(actual_kwh), 0), SUM(prediction_kwh)) * 100.0 / MAX(COALESCE(SUM(actual_kwh), 0), SUM(prediction_kwh)), 0) END as accuracy, json_group_array(json_object('hour', target_hour, 'pred', ROUND(prediction_kwh, 4), 'actual', actual_kwh)) as hourly_data FROM (SELECT hp.target_hour as target_hour, ppg.prediction_kwh as prediction_kwh, ppg.actual_kwh as actual_kwh FROM hourly_predictions hp JOIN prediction_panel_groups ppg ON hp.prediction_id = ppg.prediction_id WHERE hp.target_date = date('now', 'localtime') AND ppg.group_name = 'Gruppe 1' ORDER BY hp.target_hour);
+```
+
+### Sensor 3: SFML Stats String West
+
+**Name:** `SFML Stats String West` → Entity: `sensor.sfml_stats_string_west`
+
+**Query:** Gleich wie String Ost, aber `ppg.group_name = 'Gruppe 2'`
+
+### Sensor 4: SFML Stats String Sued
+
+**Name:** `SFML Stats String Sued` → Entity: `sensor.sfml_stats_string_sued`
+
+**Query:** Gleich wie String Ost, aber `ppg.group_name = 'Gruppe 3'`
+
+### Verifikation
+
+Unter **Entwicklerwerkzeuge → Zustände** nach `sfml_stats` suchen. Jeder Sensor hat:
+- **State** = IST-Summe in kWh (0.0 wenn noch keine Messdaten)
+- **Attribut `prediction_total`** = Prognose-Summe in kWh
+- **Attribut `accuracy`** = Genauigkeit in % (MIN/MAX-Verhältnis)
+- **Attribut `hourly_data`** = JSON-Array mit 24 Einträgen: `[{"hour": 0, "pred": 0.0, "actual": null}, ...]`
+
+### Datenquellen
+
+- **Gesamt:** Tabelle `hourly_predictions` → `prediction_kwh` (Prognose) und `actual_kwh` (IST)
+- **Panel-Gruppen:** Tabelle `prediction_panel_groups` (JOIN über `prediction_id`) → `prediction_kwh` und `actual_kwh` pro Gruppe
+- Mapping: **Gruppe 1 = String Ost**, **Gruppe 2 = String West**, **Gruppe 3 = String Süd**

@@ -1,0 +1,99 @@
+type: custom:apexcharts-card
+grid_options:
+  columns: full
+header:
+  title: "Tages-Energieertrag (Echtzeit-Scan)"
+  show: true
+  standard_format: true
+  show_states: true
+  colorize_states: true
+apex_config:
+  chart:
+    height: 250px
+  tooltip:
+    enabled: true
+    shared: true
+    followCursor: true
+  stroke:
+    dashArray:
+      - 0
+      - 5
+  legend:
+    show: true
+graph_span: 0.999d
+now:
+  show: true
+  color: blue
+span:
+  start: day
+  offset: "-0day"
+all_series_config:
+  type: area
+  opacity: 0.9
+  stroke_width: 2
+yaxis:
+  - id: kW
+    show: true
+    min: 0
+    apex_config:
+      tickAmount: 5
+      title:
+        text: kWh
+  - id: header_only
+    show: false
+series:
+  - entity: sensor.senec_solar_generated_power
+    name: Tatsächlich
+    float_precision: 3
+    color: orange
+    stroke_width: 2
+    opacity: 0.6
+    yaxis_id: kW
+    unit: kW
+    transform: return x/1000;
+    extend_to: now
+    show:
+      legend_value: false
+      in_header: false
+    group_by:
+      func: avg
+      duration: 5m
+  - entity: sensor.sfml_stats_gesamt
+    name: Prognose
+    color: grey
+    opacity: 0.3
+    stroke_width: 2
+    yaxis_id: kW
+    unit: " kWh"
+    extend_to: false
+    show:
+      legend_value: false
+      in_header: false
+    data_generator: |
+      var today = new Date();
+      var data = JSON.parse(entity.attributes.hourly_data);
+      return data.map((entry) => {
+        var date = new Date(today.getFullYear(), today.getMonth(), today.getDate(), entry.hour, 30);
+        return [date, entry.pred];
+      });
+  - entity: sensor.tt_solar_generated
+    yaxis_id: header_only
+    name: Ertrag
+    color: orange
+    float_precision: 1
+    show:
+      legend_value: true
+      in_header: true
+      in_chart: false
+  - entity: sensor.sfml_stats_gesamt
+    yaxis_id: header_only
+    name: Prognose heute
+    color: grey
+    float_precision: 2
+    unit: " kWh"
+    show:
+      legend_value: true
+      in_header: true
+      in_chart: false
+    data_generator: |
+      return [[new Date(), entity.attributes.prediction_total]];

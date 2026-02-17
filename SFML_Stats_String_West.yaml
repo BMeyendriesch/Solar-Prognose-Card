@@ -1,0 +1,108 @@
+type: custom:apexcharts-card
+header:
+  title: "String West"
+  show: true
+  standard_format: true
+  show_states: true
+  colorize_states: true
+apex_config:
+  chart:
+    height: 200px
+  tooltip:
+    enabled: true
+    shared: true
+    followCursor: true
+  stroke:
+    dashArray:
+      - 0
+      - 5
+  legend:
+    show: true
+graph_span: 0.999d
+now:
+  show: true
+  color: blue
+span:
+  start: day
+  offset: "-0day"
+all_series_config:
+  type: area
+  opacity: 0.9
+  stroke_width: 2
+yaxis:
+  - id: kWh
+    show: true
+    min: 0
+    apex_config:
+      tickAmount: 5
+      title:
+        text: kWh
+  - id: header_only
+    show: false
+series:
+  - entity: sensor.sfml_stats_string_west
+    name: IST
+    color: orange
+    opacity: 0.6
+    stroke_width: 2
+    yaxis_id: kWh
+    unit: " kWh"
+    extend_to: false
+    show:
+      legend_value: false
+      in_header: false
+    data_generator: |
+      var today = new Date();
+      var now = today.getTime();
+      var data = JSON.parse(entity.attributes.hourly_data);
+      var points = data
+        .filter((entry) => entry.actual !== null)
+        .map((entry) => {
+          var date = new Date(today.getFullYear(), today.getMonth(), today.getDate(), entry.hour, 30);
+          return [date, entry.actual];
+        })
+        .filter((point) => point[0].getTime() <= now);
+      if (points.length > 0) {
+        points.push([new Date(now), points[points.length - 1][1]]);
+      }
+      return points;
+  - entity: sensor.sfml_stats_string_west
+    name: Prognose
+    color: grey
+    opacity: 0.3
+    stroke_width: 2
+    yaxis_id: kWh
+    unit: " kWh"
+    extend_to: false
+    show:
+      legend_value: false
+      in_header: false
+    data_generator: |
+      var today = new Date();
+      var data = JSON.parse(entity.attributes.hourly_data);
+      return data.map((entry) => {
+        var date = new Date(today.getFullYear(), today.getMonth(), today.getDate(), entry.hour, 30);
+        return [date, entry.pred];
+      });
+  - entity: sensor.sfml_stats_string_west
+    yaxis_id: header_only
+    name: "IST"
+    color: orange
+    float_precision: 3
+    unit: " kWh"
+    show:
+      legend_value: true
+      in_header: true
+      in_chart: false
+  - entity: sensor.sfml_stats_string_west
+    yaxis_id: header_only
+    name: Prognose heute
+    color: grey
+    float_precision: 3
+    unit: " kWh"
+    show:
+      legend_value: true
+      in_header: true
+      in_chart: false
+    data_generator: |
+      return [[new Date(), entity.attributes.prediction_total]];
