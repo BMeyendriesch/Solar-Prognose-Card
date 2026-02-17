@@ -112,7 +112,7 @@ series:
       legend_value: true
       in_header: true
       in_chart: false
-  - entity: sensor.tt_solar_generated
+  - entity: sensor.sfml_pv_gesamt_yield_daily
     yaxis_id: header_only
     name: Heute bis jetzt
     float_precision: 1

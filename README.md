@@ -143,7 +143,7 @@ Bei mehr oder weniger als 3 Strängen: Strang-Cards entsprechend duplizieren ode
 | `sensor.sfml_pv_ost_yield_daily` | Tagesertrag Strang Ost | Eigenen Strang-Ertrags-Sensor eintragen |
 | `sensor.sfml_pv_west_yield_daily` | Tagesertrag Strang West | Eigenen Strang-Ertrags-Sensor eintragen |
 | `sensor.sfml_pv_sued_yield_daily` | Tagesertrag Strang Süd | Eigenen Strang-Ertrags-Sensor eintragen |
-| `sensor.tt_solar_generated` | Tagesertrag (in Solar_Forecast_ML.yaml) | Eigenen Tagesertrags-Sensor eintragen |
+| `sensor.sfml_pv_gesamt_yield_daily` | Tagesertrag (in Solar_Forecast_ML.yaml) | Eigenen Tagesertrags-Sensor eintragen |
 
 ### Panel-Gruppen in SQL-Queries
 

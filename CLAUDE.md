@@ -56,7 +56,7 @@ These are raw YAML configuration files consumed directly by Home Assistant. Ther
 - **Solar Forecast ML** — `sensor.solar_forecast_ml_*`, `sensor.none_*`, `update.solar_forecast_ml_update`, `sensor.sfml_pv_gesamt_yield_daily`, `sensor.sfml_pv_ost_yield_daily`, `sensor.sfml_pv_west_yield_daily`, `sensor.sfml_pv_sued_yield_daily`
 - **Solcast PV Forecast** — `sensor.solcast_pv_forecast_*`
 - **SQL Integration** — `sensor.sfml_tagesprognose`, `sensor.sfml_stats_gesamt`, `sensor.sfml_stats_string_ost`, `sensor.sfml_stats_string_west`, `sensor.sfml_stats_string_sued` (manuell angelegt, siehe unten)
-- **Custom** — `sensor.tt_solar_generated` (total daily solar generation)
+- **Custom** — `sensor.sfml_pv_gesamt_yield_daily` (total daily solar generation)
 - **Frontend** — [apexcharts-card](https://github.com/RomRider/apexcharts-card) custom Lovelace card
 
 ## SQL-Sensor "SFML Tagesprognose" manuell anlegen
