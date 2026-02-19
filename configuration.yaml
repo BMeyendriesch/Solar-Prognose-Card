@@ -1,0 +1,41 @@
+# -------------------------------------------------
+# Core
+# -------------------------------------------------
+default_config:
+
+# -------------------------------------------------
+# Frontend
+# -------------------------------------------------
+frontend:
+  themes: !include_dir_merge_named themes
+
+# -------------------------------------------------
+# Text-to-Speech
+# -------------------------------------------------
+tts:
+  - platform: google_translate
+
+# -------------------------------------------------
+# Includes
+# -------------------------------------------------
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+template: !include templates.yaml
+
+# -------------------------------------------------
+# External Services
+# -------------------------------------------------
+influxdb: !include influxdb.yaml
+http: !include http.yaml
+
+# -------------------------------------------------
+# Home Assistant Core
+# -------------------------------------------------
+homeassistant: !include homeassistant.yaml
+
+# -------------------------------------------------
+# Helper
+# -------------------------------------------------
+input_number: !include input_number.yaml
+sql: !include sql_sensors.yaml
