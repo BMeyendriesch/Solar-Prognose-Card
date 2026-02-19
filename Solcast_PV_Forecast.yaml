@@ -77,7 +77,7 @@ series:
     group_by:
       func: avg
       duration: 5m
-  - entity: sensor.senec_solar_generated_power
+  - entity: sensor.esc_easy_sensor_creation_sfml_pv_gesamt_power
     name: Solarerzeugung
     float_precision: 3
     color: orange

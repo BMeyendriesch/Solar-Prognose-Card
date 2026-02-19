@@ -51,7 +51,7 @@ cards:
         - id: header_only
           show: false
       series:
-        - entity: sensor.senec_solar_generated_power
+        - entity: sensor.esc_easy_sensor_creation_sfml_pv_gesamt_power
           name: Tatsächlich
           float_precision: 3
           color: orange
