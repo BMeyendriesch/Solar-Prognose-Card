@@ -181,7 +181,7 @@ Die Cards verwenden Sensoren, die spezifisch für die Referenz-Installation sind
 |---|---|---|
 | `sensor.senec_battery_charge_percent` | Batterie-SOC in % | Eigenen Batterie-SOC-Sensor eintragen. `transform` anpassen: `return x * KAPAZITÄT / 100;` (statt `7.5`) |
 | `sensor.senec_house_power` | Hausverbrauch in W | Eigenen Verbrauchssensor eintragen (muss W liefern) |
-| `sensor.esc_easy_sensor_creation_sfml_pv_gesamt_power` | PV-Gesamtleistung in W (AC) | Eigenen AC-Leistungssensor eintragen |
+| `sensor.piko_wechselrichter_dc_power_pv` | PV-Gesamtleistung in W (AC) | Eigenen AC-Leistungssensor eintragen |
 
 ### Wechselrichter-Stränge (DC)
 

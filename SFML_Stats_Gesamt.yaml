@@ -51,7 +51,7 @@ cards:
         - id: header_only
           show: false
       series:
-        - entity: sensor.esc_easy_sensor_creation_sfml_pv_gesamt_power
+        - entity: sensor.piko_wechselrichter_dc_power_pv
           name: Tatsächlich
           float_precision: 3
           color: orange
