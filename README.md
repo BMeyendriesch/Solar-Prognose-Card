@@ -1,8 +1,10 @@
 # Solar-Prognose-Card
 
+> **Voraussetzung:** Dieses Projekt setzt die HA-Integration [Solar Forecast ML](https://github.com/bremme/home-assistant-solar-forecast-ml) voraus. Alle Graphen beziehen ihre Daten ausschließlich aus der SQLite-Datenbank (`solar_forecast.db`), die Solar Forecast ML anlegt und befüllt. Ohne diese Integration sind die Cards nicht nutzbar.
+
 Home Assistant Dashboard-Cards zur Visualisierung von PV-Prognosen und Echtzeit-Messwerten mit [ApexCharts Card](https://github.com/RomRider/apexcharts-card).
 
-Die Cards zeigen auf einen Blick, wie gut die ML-Prognose mit der tatsächlichen Erzeugung übereinstimmt — sowohl für die Gesamtanlage als auch für einzelne Wechselrichter-Stränge. Sie eignen sich als Vorlage für eigene PV-Dashboards und können an beliebige Anlagen angepasst werden.
+Die Cards zeigen auf einen Blick, wie gut die ML-Prognose mit der tatsächlichen Erzeugung übereinstimmt — sowohl für die Gesamtanlage als auch für einzelne Wechselrichter-Stränge. Neben der Tagesansicht kann über eine Navigationsleiste durch die letzten 7 Tage geblättert werden, um historische Erträge mit der damals geltenden Prognose zu vergleichen.
 
 ![Screenshot](SFML_Stats.png)
 
