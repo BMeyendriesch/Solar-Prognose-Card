@@ -11,9 +11,17 @@ cards:
       service: input_number.increment
       service_data:
         entity_id: input_number.sfml_day_offset
-  - type: entity
+  - type: custom:button-card
     entity: sensor.sfml_display_date
-    name: " "
+    show_icon: false
+    show_name: true
+    name: "[[[ return states['sensor.sfml_display_date'].state; ]]]"
+    styles:
+      card:
+        - height: 50px
+      name:
+        - font-size: 16px
+        - font-weight: bold
   - type: custom:button-card
     icon: mdi:chevron-right
     name: Vorwärts
