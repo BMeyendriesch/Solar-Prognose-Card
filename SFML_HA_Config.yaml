@@ -13,17 +13,17 @@
 
 
 # ── 1. input_number Helper ──────────────────────────────────
-# Settings → Helpers → + Erstellen → Zahl  (empfohlen)
-# ODER in configuration.yaml / input_number.yaml einfügen:
-
-input_number:
-  sfml_day_offset:
-    name: SFML Tag Offset
-    min: 0
-    max: 7
-    step: 1
-    initial: 0
-    icon: mdi:calendar-arrow-left
+# NUR über die UI anlegen (YAML-Definition ist in neueren HA-Versionen
+# nicht mehr unterstützt):
+#
+#   Settings → Devices & Services → Helpers → + Helper erstellen → Zahl
+#
+#   Name:         SFML Tag Offset
+#   Entity-ID:    input_number.sfml_day_offset   (ggf. manuell setzen)
+#   Minimum:      0
+#   Maximum:      7
+#   Schrittweite: 1
+#   Symbol:       mdi:calendar-arrow-left
 
 
 # ── 2. Template-Sensor ──────────────────────────────────────
