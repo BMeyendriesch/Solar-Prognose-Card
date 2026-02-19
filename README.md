@@ -40,6 +40,8 @@ Die vier SFML_Stats-Karten unterstützen das Blättern durch die letzten 7 Tage.
 
 Die Datumsbeschriftung zeigt automatisch „Heute", „Gestern" oder das Datum im Format `TT.MM.JJJJ`.
 
+![Navigation](SFML_Navigation.png)
+
 ## Voraussetzungen
 
 - [Home Assistant](https://www.home-assistant.io/) mit:
