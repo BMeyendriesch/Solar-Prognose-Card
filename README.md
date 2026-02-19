@@ -23,31 +23,85 @@ Die Cards sind für folgende Anlage konfiguriert:
 |---|---|
 | **Solar_Forecast_ML.yaml** | Gesamtübersicht: Batterie (kWh), Verbrauch, Solarerzeugung (AC) und ML-Prognose |
 | **Solcast_PV_Forecast.yaml** | Wie oben, aber mit Solcast-Prognose statt Solar Forecast ML |
-| **SFML_Stats_Gesamt.yaml** | Prognose vs. Ertrag: Gesamtanlage (volle Breite) |
-| **SFML_Stats_String_Ost.yaml** | Prognose vs. Ertrag: Strang Ost |
-| **SFML_Stats_String_West.yaml** | Prognose vs. Ertrag: Strang West |
-| **SFML_Stats_String_Sued.yaml** | Prognose vs. Ertrag: Strang Süd |
+| **SFML_Stats_Gesamt.yaml** | Prognose vs. Ertrag: Gesamtanlage (volle Breite) — mit Verlaufsnavigation |
+| **SFML_Stats_String_Ost.yaml** | Prognose vs. Ertrag: Strang Ost — mit Verlaufsnavigation |
+| **SFML_Stats_String_West.yaml** | Prognose vs. Ertrag: Strang West — mit Verlaufsnavigation |
+| **SFML_Stats_String_Sued.yaml** | Prognose vs. Ertrag: Strang Süd — mit Verlaufsnavigation |
+| **SFML_Navigation.yaml** | Navigationsleiste ← Datum → zum Blättern durch die letzten 7 Tage |
+| **SFML_HA_Config.yaml** | HA-Konfigurationsreferenz (Helper, Template-Sensor, SQL-Sensoren) |
+| **sql_sensors.yaml** | Alle SQL-Sensoren für `sql: !include sql_sensors.yaml` |
+
+## Verlaufsnavigation
+
+Die vier SFML_Stats-Karten unterstützen das Blättern durch die letzten 7 Tage. Über die **SFML_Navigation.yaml**-Leiste (← Datum →) kann zwischen den Tagen navigiert werden:
+
+- **Heute**: Zeigt Live-Daten mit der aktuellen Prognose (blauer Zeitzeiger)
+- **Vergangene Tage**: Zeigt den tatsächlichen Ertrag (orange) und die damals geltende Prognose (grau)
+
+Die Datumsbeschriftung zeigt automatisch „Heute", „Gestern" oder das Datum im Format `TT.MM.JJJJ`.
 
 ## Voraussetzungen
 
-- [Home Assistant](https://www.home-assistant.io/) mit [ApexCharts Card](https://github.com/RomRider/apexcharts-card) (HACS)
+- [Home Assistant](https://www.home-assistant.io/) mit:
+  - [ApexCharts Card](https://github.com/RomRider/apexcharts-card) (HACS)
+  - [Button Card](https://github.com/custom-cards/button-card) (HACS) — für die Navigationsleiste
 - [Solar Forecast ML](https://github.com/bremme/home-assistant-solar-forecast-ml) Integration
-- SQL-Sensoren (siehe Einrichtung unten)
+- SQL-Sensoren und HA-Helfer (siehe Einrichtung unten)
 
 ## Installation
 
-1. YAML-Datei herunterladen
-2. Im HA-Dashboard eine neue Card anlegen → "Manuell (YAML)" wählen
-3. YAML-Inhalt einfügen
+1. YAML-Dateien herunterladen
+2. HA-Helfer und Sensoren einrichten (siehe unten)
+3. Im HA-Dashboard neue Cards anlegen → „Manuell (YAML)" → Inhalt einfügen
 4. Sensoren an die eigene Installation anpassen (siehe [Anpassung an andere Installationen](#anpassung-an-andere-installationen))
 
-## SQL-Sensoren einrichten
+## HA-Konfiguration für die Verlaufsnavigation
 
-Die Cards benötigen SQL-Sensoren, die Daten direkt aus der `solar_forecast.db` von Solar Forecast ML lesen. Diese werden **manuell über die HA-Oberfläche** angelegt (nicht per YAML).
+### 1. input_number Helper anlegen
+
+Über **Einstellungen → Geräte & Dienste → Helfer → + Helfer erstellen → Zahl**:
+
+| Feld | Wert |
+|---|---|
+| **Name** | `SFML Tag Offset` |
+| **Entity-ID** | `input_number.sfml_day_offset` |
+| **Minimum** | `0` |
+| **Maximum** | `7` |
+| **Schrittweite** | `1` |
+| **Symbol** | `mdi:calendar-arrow-left` |
+
+### 2. Template-Sensor in templates.yaml
+
+```yaml
+- sensor:
+    - name: "sfml_display_date"
+      unique_id: sfml_display_date
+      state: >
+        {% set offset = states('input_number.sfml_day_offset') | int %}
+        {% if offset == 0 %}Heute
+        {% elif offset == 1 %}Gestern
+        {% else %}{{ (now() - timedelta(days=offset)).strftime('%d.%m.%Y') }}{% endif %}
+      icon: mdi:calendar
+```
+
+In `configuration.yaml` einbinden: `template: !include templates.yaml`
+
+### 3. SQL-History-Sensoren
+
+Die Datei `sql_sensors.yaml` enthält alle SQL-Sensoren (bestehende + 4 neue History-Sensoren für die Navigation).
+
+In `configuration.yaml` einbinden:
+```yaml
+sql: !include sql_sensors.yaml
+```
+
+Die History-Sensoren lesen stündliche Prognose- und IST-Daten der letzten 7 Tage aus der `solar_forecast.db` und liefern sie als JSON-Attribut `history_data`.
+
+## SQL-Sensoren einrichten (Tagesansicht)
+
+Die Cards für die Tagesansicht (Heute) benötigen zusätzliche SQL-Sensoren. Diese werden entweder über `sql_sensors.yaml` oder **manuell über die HA-Oberfläche** angelegt (**Einstellungen → Geräte & Dienste → Integration hinzufügen → „SQL"**).
 
 ### Gemeinsame Einstellungen
-
-Alle SQL-Sensoren anlegen über **Einstellungen → Geräte & Dienste → Integration hinzufügen → "SQL"**:
 
 | Feld | Wert |
 |---|---|
