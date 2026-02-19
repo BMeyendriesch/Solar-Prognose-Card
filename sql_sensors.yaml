@@ -1,0 +1,377 @@
+# =============================================================================
+# SFML Monitor — SQL-Sensoren
+# =============================================================================
+# Einbinden in configuration.yaml:
+#   sql: !include sql_sensors.yaml
+# =============================================================================
+
+- name: "SFML Tägliche Genauigkeit"
+  db_url: "sqlite:////config/solar_forecast_ml/solar_forecast.db"
+  query: >-
+    SELECT
+      ROUND(AVG(acc), 1) as state,
+      json_group_array(json_object(
+        'date', date,
+        'accuracy', acc,
+        'predicted', predicted,
+        'actual', actual
+      )) as chart_data
+    FROM (
+      SELECT
+        date,
+        ROUND(MIN(accuracy_percent, 100), 1) as acc,
+        ROUND(predicted_total_kwh, 2) as predicted,
+        ROUND(actual_total_kwh, 2) as actual
+      FROM daily_summaries
+      WHERE actual_total_kwh > 0.5
+      ORDER BY date DESC
+      LIMIT 30
+    );
+  column: "state"
+  unit_of_measurement: "%"
+  unique_id: sfml_daily_accuracy
+
+- name: "SFML Modell Status"
+  db_url: "sqlite:////config/solar_forecast_ml/solar_forecast.db"
+  query: >-
+    SELECT
+      m.active_model as state,
+      m.training_samples as samples,
+      ROUND(m.accuracy * 100, 1) as r2,
+      ROUND(m.rmse, 4) as rmse,
+      ROUND(d.mae, 4) as mae_30d,
+      ROUND(d.bias, 4) as bias_30d,
+      m.last_trained
+    FROM ai_learned_weights_meta m
+    LEFT JOIN (
+      SELECT mae, bias FROM drift_metrics_rolling
+      WHERE scope = 'global' AND window_days = 30 AND season IS NULL
+      ORDER BY calculated_at DESC
+      LIMIT 1
+    ) d ON 1=1
+    WHERE m.id = 1;
+  column: "state"
+  unique_id: sfml_model_status
+
+- name: "SFML Drift Events"
+  db_url: "sqlite:////config/solar_forecast_ml/solar_forecast.db"
+  query: >-
+    SELECT
+      (SELECT COUNT(*) FROM drift_events) as state,
+      json_group_array(json_object(
+        'date', event_date,
+        'scope', scope,
+        'type', drift_type,
+        'severity', severity,
+        'value', ROUND(metric_value, 4),
+        'description', description
+      )) as events_data
+    FROM (
+      SELECT * FROM drift_events
+      ORDER BY event_date DESC, id DESC
+      LIMIT 10
+    );
+  column: "state"
+  unique_id: sfml_drift_events
+
+- name: "SFML Wetter Experten"
+  db_url: "sqlite:////config/solar_forecast_ml/solar_forecast.db"
+  query: >-
+    SELECT
+      (SELECT expert_name FROM (
+        SELECT expert_name, AVG(weight) as avg_w
+        FROM weather_expert_weights
+        GROUP BY expert_name
+        ORDER BY avg_w DESC
+        LIMIT 1
+      )) as state,
+      json_group_array(json_object(
+        'expert', expert_name,
+        'weight', ROUND(avg_w * 100, 1)
+      )) as chart_data
+    FROM (
+      SELECT expert_name, AVG(weight) as avg_w
+      FROM weather_expert_weights
+      GROUP BY expert_name
+      ORDER BY avg_w DESC
+    );
+  column: "state"
+  unique_id: sfml_weather_experts
+
+- name: "SFML Methoden Performance"
+  db_url: "sqlite:////config/solar_forecast_ml/solar_forecast.db"
+  query: >-
+    SELECT
+      CASE WHEN AVG(ai_mae) < AVG(physics_mae) THEN 'AI+Physics' ELSE 'Physics' END as state,
+      json_group_array(json_object(
+        'bucket', cloud_bucket || '/' || hour_bucket,
+        'physics_mae', ROUND(physics_mae, 3),
+        'ai_mae', ROUND(ai_mae, 3),
+        'samples', sample_count
+      )) as method_data,
+      (SELECT json_group_array(json_object(
+        'group', group_name,
+        'factor', ROUND(global_factor, 4),
+        'confidence', ROUND(confidence, 3),
+        'samples', sample_count
+      )) FROM physics_calibration_groups) as calibration_data
+    FROM method_performance_learning
+    WHERE season IS NULL AND sample_count > 0;
+  column: "state"
+  unique_id: sfml_method_performance
+
+- name: "SFML Lernfortschritt"
+  db_url: "sqlite:////config/solar_forecast_ml/solar_forecast.db"
+  query: >-
+    SELECT
+      ROUND(AVG(acc), 1) as state,
+      json_group_array(json_object(
+        'date', date,
+        'accuracy', acc,
+        'error', err
+      )) as chart_data,
+      (SELECT ROUND(AVG(e), 2) FROM (
+        SELECT ABS(error_kwh) as e FROM daily_summaries
+        WHERE actual_total_kwh > 0.5 AND error_kwh IS NOT NULL
+        ORDER BY date DESC LIMIT 7
+      )) as error_7d
+    FROM (
+      SELECT
+        date,
+        ROUND(MIN(accuracy_percent, 100), 1) as acc,
+        ROUND(ABS(error_kwh), 2) as err
+      FROM daily_summaries
+      WHERE actual_total_kwh > 0.5
+      ORDER BY date
+    );
+  column: "state"
+  unit_of_measurement: "%"
+  unique_id: sfml_lernfortschritt
+
+- name: "SFML Kalibrierung Verlauf"
+  db_url: "sqlite:////config/solar_forecast_ml/solar_forecast.db"
+  query: >-
+    SELECT
+      ROUND((SELECT AVG(global_factor) FROM physics_calibration_groups), 3) as state,
+      json_group_array(json_object(
+        'date', date,
+        'group_name', group_name,
+        'factor', factor
+      )) as chart_data
+    FROM (
+      SELECT
+        date,
+        group_name,
+        ROUND(AVG(avg_ratio), 3) as factor
+      FROM physics_calibration_history
+      GROUP BY date, group_name
+      ORDER BY date, group_name
+    );
+  column: "state"
+  unique_id: sfml_kalibrierung_verlauf
+
+- name: "SFML Fehlermetriken"
+  db_url: "sqlite:////config/solar_forecast_ml/solar_forecast.db"
+  query: >-
+    SELECT
+      ROUND(AVG(ml_rmse), 3) as state,
+      json_group_array(json_object(
+        'date', date,
+        'rmse', ROUND(ml_rmse, 4),
+        'mae', ROUND(ml_mae, 4),
+        'r2', ROUND(ml_r2_score, 4),
+        'error_kwh', ROUND(ABS(error_kwh), 2)
+      )) as chart_data
+    FROM (
+      SELECT date, ml_rmse, ml_mae, ml_r2_score, error_kwh
+      FROM daily_summaries
+      WHERE actual_total_kwh > 0.5
+        AND ml_rmse IS NOT NULL
+      ORDER BY date
+    );
+  column: "state"
+  unit_of_measurement: "kWh"
+  unique_id: sfml_fehlermetriken
+
+- name: "SFML Drift Timeline"
+  db_url: "sqlite:////config/solar_forecast_ml/solar_forecast.db"
+  query: >-
+    SELECT
+      COUNT(*) as state,
+      json_group_array(json_object(
+        'date', event_date,
+        'scope', scope,
+        'type', drift_type,
+        'severity', severity,
+        'value', ROUND(metric_value, 3),
+        'threshold', ROUND(threshold_value, 3),
+        'action', response_action,
+        'desc', description
+      )) as chart_data
+    FROM (
+      SELECT *
+      FROM drift_events
+      ORDER BY event_date, id
+    );
+  column: "state"
+  unique_id: sfml_drift_timeline
+
+- name: "SFML Ensemble Gewichte"
+  db_url: "sqlite:////config/solar_forecast_ml/solar_forecast.db"
+  query: >-
+    SELECT
+      'LSTM/Ridge' as state,
+      json_group_array(json_object(
+        'group', group_name,
+        'bucket', cloud_bucket || '/' || hour_bucket,
+        'lstm_w', ROUND(lstm_weight * 100, 1),
+        'ridge_w', ROUND(ridge_weight * 100, 1),
+        'lstm_mae', ROUND(lstm_mae, 4),
+        'ridge_mae', ROUND(ridge_mae, 4),
+        'samples', sample_count
+      )) as chart_data
+    FROM ensemble_group_weights
+    WHERE season IS NULL
+    ORDER BY group_name, cloud_bucket, hour_bucket;
+  column: "state"
+  unique_id: sfml_ensemble_gewichte
+
+- name: "SFML Gruppen Genauigkeit"
+  db_url: "sqlite:////config/solar_forecast_ml/solar_forecast.db"
+  query: >-
+    SELECT
+      ROUND(AVG(avg_acc), 1) as state,
+      json_group_array(json_object(
+        'date', target_date,
+        'group', group_name,
+        'accuracy', avg_acc,
+        'hours', hours
+      )) as chart_data
+    FROM (
+      SELECT
+        hp.target_date,
+        hpga.group_name,
+        ROUND(AVG(hpga.accuracy_percent), 1) as avg_acc,
+        COUNT(*) as hours
+      FROM hourly_panel_group_accuracy hpga
+      JOIN hourly_predictions hp ON hpga.prediction_id = hp.prediction_id
+      WHERE hp.is_production_hour = 1
+        AND hpga.actual_kwh > 0.01
+      GROUP BY hp.target_date, hpga.group_name
+      ORDER BY hp.target_date, hpga.group_name
+    );
+  column: "state"
+  unit_of_measurement: "%"
+  unique_id: sfml_gruppen_genauigkeit
+
+- name: "SFML Experten Lernen"
+  db_url: "sqlite:////config/solar_forecast_ml/solar_forecast.db"
+  query: >-
+    SELECT
+      (SELECT expert_name FROM (
+        SELECT expert_name, AVG(weight_after) as avg_w
+        FROM weather_expert_learning
+        GROUP BY expert_name
+        ORDER BY avg_w DESC
+        LIMIT 1
+      )) as state,
+      json_group_array(json_object(
+        'date', date,
+        'expert', expert_name,
+        'weight', ROUND(avg_weight * 100, 1)
+      )) as chart_data
+    FROM (
+      SELECT date, expert_name, AVG(weight_after) as avg_weight
+      FROM weather_expert_learning
+      GROUP BY date, expert_name
+      ORDER BY date, expert_name
+    );
+  column: "state"
+  unique_id: sfml_experten_lernen
+
+# Gesamt History (letzte 7 Tage, stündlich)
+# Alle Spalten außer "state" werden automatisch als Entity-Attribute ausgegeben.
+- name: "SFML Stats Gesamt History"
+  db_url: "sqlite:////config/solar_forecast_ml/solar_forecast.db"
+  query: >-
+    SELECT '7d' as state,
+      (SELECT json_group_object(target_date, hourly_json) FROM (
+        SELECT target_date,
+          json_group_array(json_object(
+            'hour', target_hour,
+            'pred', ROUND(prediction_kwh, 4),
+            'actual', actual_kwh
+          )) as hourly_json
+        FROM hourly_predictions
+        WHERE target_date >= date('now', 'localtime', '-7 days')
+          AND target_date < date('now', 'localtime')
+        GROUP BY target_date ORDER BY target_date
+      )) as history_data
+  column: "state"
+  unique_id: sfml_stats_gesamt_history
+
+# Strang Ost History (Gruppe 1)
+- name: "SFML Stats String Ost History"
+  db_url: "sqlite:////config/solar_forecast_ml/solar_forecast.db"
+  query: >-
+    SELECT '7d' as state,
+      (SELECT json_group_object(target_date, hourly_json) FROM (
+        SELECT hp.target_date,
+          json_group_array(json_object(
+            'hour', hp.target_hour,
+            'pred', ROUND(ppg.prediction_kwh, 4),
+            'actual', ppg.actual_kwh
+          )) as hourly_json
+        FROM hourly_predictions hp
+        JOIN prediction_panel_groups ppg ON hp.prediction_id = ppg.prediction_id
+        WHERE hp.target_date >= date('now', 'localtime', '-7 days')
+          AND hp.target_date < date('now', 'localtime')
+          AND ppg.group_name = 'Gruppe 1'
+        GROUP BY hp.target_date ORDER BY hp.target_date
+      )) as history_data
+  column: "state"
+  unique_id: sfml_stats_string_ost_history
+
+# Strang West History (Gruppe 2)
+- name: "SFML Stats String West History"
+  db_url: "sqlite:////config/solar_forecast_ml/solar_forecast.db"
+  query: >-
+    SELECT '7d' as state,
+      (SELECT json_group_object(target_date, hourly_json) FROM (
+        SELECT hp.target_date,
+          json_group_array(json_object(
+            'hour', hp.target_hour,
+            'pred', ROUND(ppg.prediction_kwh, 4),
+            'actual', ppg.actual_kwh
+          )) as hourly_json
+        FROM hourly_predictions hp
+        JOIN prediction_panel_groups ppg ON hp.prediction_id = ppg.prediction_id
+        WHERE hp.target_date >= date('now', 'localtime', '-7 days')
+          AND hp.target_date < date('now', 'localtime')
+          AND ppg.group_name = 'Gruppe 2'
+        GROUP BY hp.target_date ORDER BY hp.target_date
+      )) as history_data
+  column: "state"
+  unique_id: sfml_stats_string_west_history
+
+# Strang Süd History (Gruppe 3)
+- name: "SFML Stats String Sued History"
+  db_url: "sqlite:////config/solar_forecast_ml/solar_forecast.db"
+  query: >-
+    SELECT '7d' as state,
+      (SELECT json_group_object(target_date, hourly_json) FROM (
+        SELECT hp.target_date,
+          json_group_array(json_object(
+            'hour', hp.target_hour,
+            'pred', ROUND(ppg.prediction_kwh, 4),
+            'actual', ppg.actual_kwh
+          )) as hourly_json
+        FROM hourly_predictions hp
+        JOIN prediction_panel_groups ppg ON hp.prediction_id = ppg.prediction_id
+        WHERE hp.target_date >= date('now', 'localtime', '-7 days')
+          AND hp.target_date < date('now', 'localtime')
+          AND ppg.group_name = 'Gruppe 3'
+        GROUP BY hp.target_date ORDER BY hp.target_date
+      )) as history_data
+  column: "state"
+  unique_id: sfml_stats_string_sued_history
