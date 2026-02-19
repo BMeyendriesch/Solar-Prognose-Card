@@ -1,0 +1,96 @@
+# Alle Spalten außer der Hauptspalte ("state") werden vom HA SQL-Sensor
+# automatisch als Entity-Attribute ausgegeben.
+
+# Gesamt
+- platform: sql
+  db_url: sqlite:////config/solar_forecast_ml/solar_forecast.db
+  scan_interval: 3600
+  queries:
+    - name: sfml_stats_gesamt_history
+      query: >
+        SELECT '7d' as state,
+          (SELECT json_group_object(target_date, hourly_json) FROM (
+            SELECT target_date,
+              json_group_array(json_object(
+                'hour', target_hour,
+                'pred', ROUND(prediction_kwh, 4),
+                'actual', actual_kwh
+              )) as hourly_json
+            FROM hourly_predictions
+            WHERE target_date >= date('now', 'localtime', '-7 days')
+              AND target_date < date('now', 'localtime')
+            GROUP BY target_date ORDER BY target_date
+          )) as history_data
+      column: state
+
+# Strang Ost (Gruppe 1)
+- platform: sql
+  db_url: sqlite:////config/solar_forecast_ml/solar_forecast.db
+  scan_interval: 3600
+  queries:
+    - name: sfml_stats_string_ost_history
+      query: >
+        SELECT '7d' as state,
+          (SELECT json_group_object(target_date, hourly_json) FROM (
+            SELECT hp.target_date,
+              json_group_array(json_object(
+                'hour', hp.target_hour,
+                'pred', ROUND(ppg.prediction_kwh, 4),
+                'actual', ppg.actual_kwh
+              )) as hourly_json
+            FROM hourly_predictions hp
+            JOIN prediction_panel_groups ppg ON hp.prediction_id = ppg.prediction_id
+            WHERE hp.target_date >= date('now', 'localtime', '-7 days')
+              AND hp.target_date < date('now', 'localtime')
+              AND ppg.group_name = 'Gruppe 1'
+            GROUP BY hp.target_date ORDER BY hp.target_date
+          )) as history_data
+      column: state
+
+# Strang West (Gruppe 2)
+- platform: sql
+  db_url: sqlite:////config/solar_forecast_ml/solar_forecast.db
+  scan_interval: 3600
+  queries:
+    - name: sfml_stats_string_west_history
+      query: >
+        SELECT '7d' as state,
+          (SELECT json_group_object(target_date, hourly_json) FROM (
+            SELECT hp.target_date,
+              json_group_array(json_object(
+                'hour', hp.target_hour,
+                'pred', ROUND(ppg.prediction_kwh, 4),
+                'actual', ppg.actual_kwh
+              )) as hourly_json
+            FROM hourly_predictions hp
+            JOIN prediction_panel_groups ppg ON hp.prediction_id = ppg.prediction_id
+            WHERE hp.target_date >= date('now', 'localtime', '-7 days')
+              AND hp.target_date < date('now', 'localtime')
+              AND ppg.group_name = 'Gruppe 2'
+            GROUP BY hp.target_date ORDER BY hp.target_date
+          )) as history_data
+      column: state
+
+# Strang Süd (Gruppe 3)
+- platform: sql
+  db_url: sqlite:////config/solar_forecast_ml/solar_forecast.db
+  scan_interval: 3600
+  queries:
+    - name: sfml_stats_string_sued_history
+      query: >
+        SELECT '7d' as state,
+          (SELECT json_group_object(target_date, hourly_json) FROM (
+            SELECT hp.target_date,
+              json_group_array(json_object(
+                'hour', hp.target_hour,
+                'pred', ROUND(ppg.prediction_kwh, 4),
+                'actual', ppg.actual_kwh
+              )) as hourly_json
+            FROM hourly_predictions hp
+            JOIN prediction_panel_groups ppg ON hp.prediction_id = ppg.prediction_id
+            WHERE hp.target_date >= date('now', 'localtime', '-7 days')
+              AND hp.target_date < date('now', 'localtime')
+              AND ppg.group_name = 'Gruppe 3'
+            GROUP BY hp.target_date ORDER BY hp.target_date
+          )) as history_data
+      column: state
