@@ -254,3 +254,13 @@ cards:
             day = typeof day === 'string' ? JSON.parse(day) : day;
             var total = day.reduce(function(s,e) { return s + (e.pred || 0); }, 0);
             return [[new Date(), Math.round(total * 10) / 10]];
+        # Trigger-Series: erzwingt Re-Render bei Offset-Änderung
+        - entity: input_number.sfml_day_offset
+          yaxis_id: header_only
+          name: _trigger
+          show:
+            in_chart: false
+            in_header: false
+            legend_value: false
+          data_generator: |
+            return [];
