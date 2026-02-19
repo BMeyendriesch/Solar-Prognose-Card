@@ -1,0 +1,142 @@
+# ============================================================
+# SFML_Stats Navigation – Home Assistant Konfiguration
+# ============================================================
+# Diese Snippets in die jeweiligen HA-Konfigurationsdateien
+# einfügen und danach HA neu starten (oder Konfiguration neu laden).
+#
+# HINWEIS: Der HA SQL-Sensor (sql platform) gibt alle SELECTierten
+# Spalten außer der Hauptspalte automatisch als Attribute aus.
+# Deshalb reicht eine einzige Query mit zwei Spalten:
+#   - state (Hauptspalte, Wert "7d")
+#   - history_data (wird automatisch zum Attribut)
+# ============================================================
+
+
+# ── 1. input_number Helper ──────────────────────────────────
+# Settings → Helpers → + Erstellen → Zahl  (empfohlen)
+# ODER in configuration.yaml / input_number.yaml einfügen:
+
+input_number:
+  sfml_day_offset:
+    name: SFML Tag Offset
+    min: 0
+    max: 7
+    step: 1
+    initial: 0
+    icon: mdi:calendar-arrow-left
+
+
+# ── 2. Template-Sensor ──────────────────────────────────────
+# In configuration.yaml oder template.yaml einfügen:
+
+template:
+  - sensor:
+      - name: "sfml_display_date"
+        state: >
+          {% set offset = states('input_number.sfml_day_offset') | int %}
+          {% if offset == 0 %}Heute
+          {% elif offset == 1 %}Gestern
+          {% else %}{{ (now() - timedelta(days=offset)).strftime('%d.%m.%Y') }}{% endif %}
+        icon: mdi:calendar
+
+
+# ── 3. SQL History-Sensoren ──────────────────────────────────
+# In configuration.yaml oder sensor.yaml einfügen.
+# Alle Spalten außer "state" werden automatisch als Attribute
+# an den Sensor angehängt (HA-Standardverhalten seit 2022.x).
+
+sensor:
+
+  # Gesamt
+  - platform: sql
+    db_url: sqlite:////config/solar_forecast_ml/solar_forecast.db
+    scan_interval: 3600
+    queries:
+      - name: sfml_stats_gesamt_history
+        query: >
+          SELECT '7d' as state,
+            (SELECT json_group_object(target_date, hourly_json) FROM (
+              SELECT target_date,
+                json_group_array(json_object(
+                  'hour', target_hour,
+                  'pred', ROUND(prediction_kwh, 4),
+                  'actual', actual_kwh
+                )) as hourly_json
+              FROM hourly_predictions
+              WHERE target_date >= date('now', 'localtime', '-7 days')
+                AND target_date < date('now', 'localtime')
+              GROUP BY target_date ORDER BY target_date
+            )) as history_data
+        column: state
+
+  # Strang Ost (Gruppe 1)
+  - platform: sql
+    db_url: sqlite:////config/solar_forecast_ml/solar_forecast.db
+    scan_interval: 3600
+    queries:
+      - name: sfml_stats_string_ost_history
+        query: >
+          SELECT '7d' as state,
+            (SELECT json_group_object(target_date, hourly_json) FROM (
+              SELECT hp.target_date,
+                json_group_array(json_object(
+                  'hour', hp.target_hour,
+                  'pred', ROUND(ppg.prediction_kwh, 4),
+                  'actual', ppg.actual_kwh
+                )) as hourly_json
+              FROM hourly_predictions hp
+              JOIN prediction_panel_groups ppg ON hp.prediction_id = ppg.prediction_id
+              WHERE hp.target_date >= date('now', 'localtime', '-7 days')
+                AND hp.target_date < date('now', 'localtime')
+                AND ppg.group_name = 'Gruppe 1'
+              GROUP BY hp.target_date ORDER BY hp.target_date
+            )) as history_data
+        column: state
+
+  # Strang West (Gruppe 2)
+  - platform: sql
+    db_url: sqlite:////config/solar_forecast_ml/solar_forecast.db
+    scan_interval: 3600
+    queries:
+      - name: sfml_stats_string_west_history
+        query: >
+          SELECT '7d' as state,
+            (SELECT json_group_object(target_date, hourly_json) FROM (
+              SELECT hp.target_date,
+                json_group_array(json_object(
+                  'hour', hp.target_hour,
+                  'pred', ROUND(ppg.prediction_kwh, 4),
+                  'actual', ppg.actual_kwh
+                )) as hourly_json
+              FROM hourly_predictions hp
+              JOIN prediction_panel_groups ppg ON hp.prediction_id = ppg.prediction_id
+              WHERE hp.target_date >= date('now', 'localtime', '-7 days')
+                AND hp.target_date < date('now', 'localtime')
+                AND ppg.group_name = 'Gruppe 2'
+              GROUP BY hp.target_date ORDER BY hp.target_date
+            )) as history_data
+        column: state
+
+  # Strang Süd (Gruppe 3)
+  - platform: sql
+    db_url: sqlite:////config/solar_forecast_ml/solar_forecast.db
+    scan_interval: 3600
+    queries:
+      - name: sfml_stats_string_sued_history
+        query: >
+          SELECT '7d' as state,
+            (SELECT json_group_object(target_date, hourly_json) FROM (
+              SELECT hp.target_date,
+                json_group_array(json_object(
+                  'hour', hp.target_hour,
+                  'pred', ROUND(ppg.prediction_kwh, 4),
+                  'actual', ppg.actual_kwh
+                )) as hourly_json
+              FROM hourly_predictions hp
+              JOIN prediction_panel_groups ppg ON hp.prediction_id = ppg.prediction_id
+              WHERE hp.target_date >= date('now', 'localtime', '-7 days')
+                AND hp.target_date < date('now', 'localtime')
+                AND ppg.group_name = 'Gruppe 3'
+              GROUP BY hp.target_date ORDER BY hp.target_date
+            )) as history_data
+        column: state

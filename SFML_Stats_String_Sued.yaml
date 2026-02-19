@@ -1,100 +1,249 @@
-type: custom:apexcharts-card
-header:
-  title: "Strang Süd"
-  show: true
-  standard_format: true
-  show_states: true
-  colorize_states: true
-apex_config:
-  chart:
-    height: 200px
-  tooltip:
-    enabled: true
-    shared: true
-    followCursor: true
-  stroke:
-    dashArray:
-      - 0
-      - 5
-  legend:
-    show: true
-graph_span: 0.999d
-now:
-  show: true
-  color: blue
-span:
-  start: day
-  offset: "-0day"
-all_series_config:
-  type: area
-  opacity: 0.9
-  stroke_width: 2
-yaxis:
-  - id: kWh
-    show: true
-    min: 0
-    apex_config:
-      tickAmount: 5
-      title:
-        text: kWh (DC)
-  - id: header_only
-    show: false
-series:
-  - entity: sensor.piko_wechselrichter_dc_3_power
-    name: IST
-    float_precision: 3
-    color: orange
-    stroke_width: 2
-    opacity: 0.6
-    yaxis_id: kWh
-    unit: kW
-    transform: return x/1000;
-    extend_to: now
-    show:
-      legend_value: false
-      in_header: false
-    group_by:
-      func: avg
-      duration: 5m
-  - entity: sensor.sfml_stats_string_sued
-    name: Prognose
-    color: grey
-    opacity: 0.3
-    stroke_width: 2
-    yaxis_id: kWh
-    unit: " kWh"
-    extend_to: false
-    show:
-      legend_value: false
-      in_header: false
-    data_generator: |
-      var today = new Date();
-      var data = JSON.parse(entity.attributes.hourly_data);
-      return data.map((entry) => {
-        var date = new Date(today.getFullYear(), today.getMonth(), today.getDate(), entry.hour, 30);
-        return [date, entry.pred];
-      });
-  - entity: sensor.sfml_pv_sued_yield_daily
-    yaxis_id: header_only
-    name: "IST"
-    color: orange
-    float_precision: 1
-    unit: " kWh"
-    show:
-      legend_value: true
-      in_header: true
-      in_chart: false
-    data_generator: |
-      return [[new Date(), parseFloat(entity.state)]];
-  - entity: sensor.sfml_stats_string_sued
-    yaxis_id: header_only
-    name: Prognose heute
-    color: grey
-    float_precision: 1
-    unit: " kWh"
-    show:
-      legend_value: true
-      in_header: true
-      in_chart: false
-    data_generator: |
-      return [[new Date(), entity.attributes.prediction_total]];
+type: vertical-stack
+cards:
+  # ── Heute (offset = 0): bestehende Karte ──
+  - type: conditional
+    conditions:
+      - condition: numeric_state
+        entity: input_number.sfml_day_offset
+        below: 1
+    card:
+      type: custom:apexcharts-card
+      header:
+        title: "Strang Süd"
+        show: true
+        standard_format: true
+        show_states: true
+        colorize_states: true
+      apex_config:
+        chart:
+          height: 200px
+        tooltip:
+          enabled: true
+          shared: true
+          followCursor: true
+        stroke:
+          dashArray:
+            - 0
+            - 5
+        legend:
+          show: true
+      graph_span: 0.999d
+      now:
+        show: true
+        color: blue
+      span:
+        start: day
+        offset: "-0day"
+      all_series_config:
+        type: area
+        opacity: 0.9
+        stroke_width: 2
+      yaxis:
+        - id: kWh
+          show: true
+          min: 0
+          apex_config:
+            tickAmount: 5
+            title:
+              text: kWh (DC)
+        - id: header_only
+          show: false
+      series:
+        - entity: sensor.piko_wechselrichter_dc_3_power
+          name: IST
+          float_precision: 3
+          color: orange
+          stroke_width: 2
+          opacity: 0.6
+          yaxis_id: kWh
+          unit: kW
+          transform: return x/1000;
+          extend_to: now
+          show:
+            legend_value: false
+            in_header: false
+          group_by:
+            func: avg
+            duration: 5m
+        - entity: sensor.sfml_stats_string_sued
+          name: Prognose
+          color: grey
+          opacity: 0.3
+          stroke_width: 2
+          yaxis_id: kWh
+          unit: " kWh"
+          extend_to: false
+          show:
+            legend_value: false
+            in_header: false
+          data_generator: |
+            var today = new Date();
+            var data = JSON.parse(entity.attributes.hourly_data);
+            return data.map((entry) => {
+              var date = new Date(today.getFullYear(), today.getMonth(), today.getDate(), entry.hour, 30);
+              return [date, entry.pred];
+            });
+        - entity: sensor.sfml_pv_sued_yield_daily
+          yaxis_id: header_only
+          name: "IST"
+          color: orange
+          float_precision: 1
+          unit: " kWh"
+          show:
+            legend_value: true
+            in_header: true
+            in_chart: false
+          data_generator: |
+            return [[new Date(), parseFloat(entity.state)]];
+        - entity: sensor.sfml_stats_string_sued
+          yaxis_id: header_only
+          name: Prognose heute
+          color: grey
+          float_precision: 1
+          unit: " kWh"
+          show:
+            legend_value: true
+            in_header: true
+            in_chart: false
+          data_generator: |
+            return [[new Date(), entity.attributes.prediction_total]];
+
+  # ── Vergangene Tage (offset > 0): History-Karte ──
+  - type: conditional
+    conditions:
+      - condition: numeric_state
+        entity: input_number.sfml_day_offset
+        above: 0
+    card:
+      type: custom:apexcharts-card
+      header:
+        title: "Strang Süd"
+        show: true
+        standard_format: true
+        show_states: true
+        colorize_states: true
+      apex_config:
+        chart:
+          height: 200px
+        tooltip:
+          enabled: true
+          shared: true
+          followCursor: true
+        stroke:
+          dashArray:
+            - 0
+            - 5
+        legend:
+          show: true
+      graph_span: 1d
+      all_series_config:
+        type: area
+        opacity: 0.9
+        stroke_width: 2
+      yaxis:
+        - id: kWh
+          show: true
+          min: 0
+          apex_config:
+            tickAmount: 5
+            title:
+              text: kWh (DC)
+        - id: header_only
+          show: false
+      series:
+        - entity: sensor.sfml_stats_string_sued_history
+          name: IST
+          color: orange
+          stroke_width: 2
+          opacity: 0.6
+          yaxis_id: kWh
+          unit: kW
+          extend_to: false
+          show:
+            legend_value: false
+            in_header: false
+          data_generator: |
+            var offset = parseInt(hass.states['input_number.sfml_day_offset']?.state || '0');
+            var t = new Date();
+            t.setDate(t.getDate() - offset);
+            var y = t.getFullYear(), m = t.getMonth(), d = t.getDate();
+            var pad = n => String(n).padStart(2,'0');
+            var dk = y + '-' + pad(m+1) + '-' + pad(d);
+            var attr = entity.attributes.history_data;
+            var hist = typeof attr === 'string' ? JSON.parse(attr) : attr;
+            var day = hist ? hist[dk] : null;
+            if (!day) return [[new Date(y,m,d,0,0),0],[new Date(y,m,d,23,59),0]];
+            var pts = [[new Date(y,m,d,0,0),0]];
+            day.forEach(function(e) { if (e.actual !== null && e.actual !== undefined) pts.push([new Date(y,m,d,e.hour,30), e.actual]); });
+            pts.push([new Date(y,m,d,23,59),0]);
+            return pts;
+        - entity: sensor.sfml_stats_string_sued_history
+          name: Prognose
+          color: grey
+          opacity: 0.3
+          stroke_width: 2
+          yaxis_id: kWh
+          unit: " kWh"
+          extend_to: false
+          show:
+            legend_value: false
+            in_header: false
+          data_generator: |
+            var offset = parseInt(hass.states['input_number.sfml_day_offset']?.state || '0');
+            var t = new Date();
+            t.setDate(t.getDate() - offset);
+            var y = t.getFullYear(), m = t.getMonth(), d = t.getDate();
+            var pad = n => String(n).padStart(2,'0');
+            var dk = y + '-' + pad(m+1) + '-' + pad(d);
+            var attr = entity.attributes.history_data;
+            var hist = typeof attr === 'string' ? JSON.parse(attr) : attr;
+            var day = hist ? hist[dk] : null;
+            if (!day) return [[new Date(y,m,d,0,0),0],[new Date(y,m,d,23,59),0]];
+            var pts = [[new Date(y,m,d,0,0),0]];
+            day.forEach(function(e) { pts.push([new Date(y,m,d,e.hour,30), e.pred]); });
+            pts.push([new Date(y,m,d,23,59),0]);
+            return pts;
+        - entity: sensor.sfml_stats_string_sued_history
+          yaxis_id: header_only
+          name: IST
+          color: orange
+          float_precision: 1
+          unit: " kWh"
+          show:
+            legend_value: true
+            in_header: true
+            in_chart: false
+          data_generator: |
+            var offset = parseInt(hass.states['input_number.sfml_day_offset']?.state || '0');
+            var t = new Date();
+            t.setDate(t.getDate() - offset);
+            var pad = n => String(n).padStart(2,'0');
+            var dk = t.getFullYear() + '-' + pad(t.getMonth()+1) + '-' + pad(t.getDate());
+            var attr = entity.attributes.history_data;
+            var hist = typeof attr === 'string' ? JSON.parse(attr) : attr;
+            var day = hist ? hist[dk] : null;
+            if (!day) return [[t, 0]];
+            var total = day.reduce(function(s,e) { return s + (e.actual || 0); }, 0);
+            return [[t, Math.round(total * 10) / 10]];
+        - entity: sensor.sfml_stats_string_sued_history
+          yaxis_id: header_only
+          name: Prognose
+          color: grey
+          float_precision: 1
+          unit: " kWh"
+          show:
+            legend_value: true
+            in_header: true
+            in_chart: false
+          data_generator: |
+            var offset = parseInt(hass.states['input_number.sfml_day_offset']?.state || '0');
+            var t = new Date();
+            t.setDate(t.getDate() - offset);
+            var pad = n => String(n).padStart(2,'0');
+            var dk = t.getFullYear() + '-' + pad(t.getMonth()+1) + '-' + pad(t.getDate());
+            var attr = entity.attributes.history_data;
+            var hist = typeof attr === 'string' ? JSON.parse(attr) : attr;
+            var day = hist ? hist[dk] : null;
+            if (!day) return [[t, 0]];
+            var total = day.reduce(function(s,e) { return s + (e.pred || 0); }, 0);
+            return [[t, Math.round(total * 10) / 10]];
