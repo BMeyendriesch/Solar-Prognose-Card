@@ -177,6 +177,7 @@ cards:
             var hist = typeof attr === 'string' ? JSON.parse(attr) : attr;
             var day = hist ? hist[dk] : null;
             if (!day) return [[new Date(y,m,d,0,0),0],[new Date(y,m,d,23,59),0]];
+            day = typeof day === 'string' ? JSON.parse(day) : day;
             var pts = [[new Date(y,m,d,0,0),0]];
             day.forEach(function(e) { if (e.actual !== null && e.actual !== undefined) pts.push([new Date(y,m,d,e.hour,30), e.actual]); });
             pts.push([new Date(y,m,d,23,59),0]);
@@ -203,6 +204,7 @@ cards:
             var hist = typeof attr === 'string' ? JSON.parse(attr) : attr;
             var day = hist ? hist[dk] : null;
             if (!day) return [[new Date(y,m,d,0,0),0],[new Date(y,m,d,23,59),0]];
+            day = typeof day === 'string' ? JSON.parse(day) : day;
             var pts = [[new Date(y,m,d,0,0),0]];
             day.forEach(function(e) { pts.push([new Date(y,m,d,e.hour,30), e.pred]); });
             pts.push([new Date(y,m,d,23,59),0]);
@@ -227,6 +229,7 @@ cards:
             var hist = typeof attr === 'string' ? JSON.parse(attr) : attr;
             var day = hist ? hist[dk] : null;
             if (!day) return [[t, 0]];
+            day = typeof day === 'string' ? JSON.parse(day) : day;
             var total = day.reduce(function(s,e) { return s + (e.actual || 0); }, 0);
             return [[t, Math.round(total * 10) / 10]];
         - entity: sensor.sfml_stats_gesamt_history
@@ -249,5 +252,6 @@ cards:
             var hist = typeof attr === 'string' ? JSON.parse(attr) : attr;
             var day = hist ? hist[dk] : null;
             if (!day) return [[t, 0]];
+            day = typeof day === 'string' ? JSON.parse(day) : day;
             var total = day.reduce(function(s,e) { return s + (e.pred || 0); }, 0);
             return [[t, Math.round(total * 10) / 10]];
