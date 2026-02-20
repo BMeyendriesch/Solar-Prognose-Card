@@ -1,6 +1,6 @@
 # Solar-Prognose-Card
 
-> **Voraussetzung:** Dieses Projekt setzt die HA-Integration [Solar Forecast ML](https://github.com/bremme/home-assistant-solar-forecast-ml) voraus. Alle Graphen beziehen ihre Daten ausschließlich aus der SQLite-Datenbank (`solar_forecast.db`), die Solar Forecast ML anlegt und befüllt. Ohne diese Integration sind die Cards nicht nutzbar.
+> **Voraussetzung:** Dieses Projekt setzt die HA-Integration [Solar Forecast ML](https://github.com/bremme/home-assistant-solar-forecast-ml) voraus. Die Prognosedaten stammen aus der SQLite-Datenbank (`solar_forecast.db`), die Solar Forecast ML anlegt und befüllt. Die aktuellen Leistungsdaten sind DC-Messwerte des Wechselrichters. Ohne diese Integration sind die Cards nicht nutzbar.
 
 Home Assistant Dashboard-Cards zur Visualisierung von PV-Prognosen und Echtzeit-Messwerten mit [ApexCharts Card](https://github.com/RomRider/apexcharts-card).
 
