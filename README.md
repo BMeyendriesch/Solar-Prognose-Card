@@ -45,6 +45,16 @@ Die Karte **Solar_Forecast_ML.yaml** liest sämtliche Werte aus der SFML-Datenba
 
 Damit funktioniert die Karte auf jeder SFML-Installation unverändert — es werden keine Wechselrichter-, Speicher- oder Verbrauchssensoren der eigenen Anlage mehr benötigt. Der Batterie-Ladestand wird als Prozent auf der rechten Achse gezeichnet (statt früher in kWh, wofür die Speicherkapazität der Anlage in der Karte stehen musste).
 
+**Recorder-Empfehlung:** `sensor.sfml_card_tagesverlauf` und `sensor.sfml_card_prognose` tragen große, sich ständig ändernde JSON-Attribute. Die Karte liest nur den Live-Zustand — Historie braucht sie nicht. Wer die Datenbank schlank halten will, schließt beide vom Recorder aus:
+
+```yaml
+recorder:
+  exclude:
+    entities:
+      - sensor.sfml_card_tagesverlauf
+      - sensor.sfml_card_prognose
+```
+
 Der frühere Kopfwert „Prognose heute Rest" kam aus dem SFML-Sensor `…forecast_today_remaining`, der deutlich zu hohe Werte liefern kann (beobachtet: 59,5 kWh Rest bei 41,4 kWh Tagesprognose). Die Karte rechnet den Rest jetzt selbst aus den Stundenprognosen der Datenbank. Wer den Restwert außerhalb der Karte braucht (z. B. für eine Energiefluss-Karte), legt einen kleinen Template-Sensor an:
 
 ```yaml
