@@ -23,7 +23,7 @@ Die Cards sind für folgende Anlage konfiguriert:
 
 | Datei | Beschreibung |
 |---|---|
-| **Solar_Forecast_ML.yaml** | Gesamtübersicht: Batterie (kWh), Verbrauch, Solarerzeugung (AC) und ML-Prognose |
+| **Solar_Forecast_ML.yaml** | Gesamtübersicht: Batterie-SoC, Verbrauch, Solarerzeugung und ML-Prognose — seit 09/2026 vollständig aus der SFML-Datenbank, ohne anlagenspezifische Sensoren |
 | **Solcast_PV_Forecast.yaml** | Wie oben, aber mit Solcast-Prognose statt Solar Forecast ML |
 | **SFML_Stats_Gesamt.yaml** | Prognose vs. Ertrag: Gesamtanlage (volle Breite) — mit Verlaufsnavigation |
 | **SFML_Stats_String_Ost.yaml** | Prognose vs. Ertrag: Strang Ost — mit Verlaufsnavigation |
@@ -32,6 +32,34 @@ Die Cards sind für folgende Anlage konfiguriert:
 | **SFML_Navigation.yaml** | Navigationsleiste ← Datum → zum Blättern durch die letzten 7 Tage |
 | **SFML_HA_Config.yaml** | HA-Konfigurationsreferenz (Helper, Template-Sensor, SQL-Sensoren) |
 | **sql_sensors.yaml** | Alle SQL-Sensoren für `sql: !include sql_sensors.yaml` |
+
+## Datenbasis der Gesamtübersicht (seit 09/2026)
+
+Die Karte **Solar_Forecast_ML.yaml** liest sämtliche Werte aus der SFML-Datenbank (`solar_forecast.db`) über drei SQL-Sensoren, die in `sql_sensors.yaml` enthalten sind:
+
+| Sensor | Inhalt |
+|---|---|
+| `sensor.sfml_card_prognose` | Tagesprognose heute (Zustand) plus Attribute: `rest_kwh` (verbleibende Prognose ab jetzt, anteilig für die laufende Stunde), `naechste_stunde_kwh`, `morgen_kwh`, `uebermorgen_kwh`, `hourly_forecast` (Stundenkurve) |
+| `sensor.sfml_card_ertrag_heute` | Tagesertrag aus `stats_daily_energy` |
+| `sensor.sfml_card_tagesverlauf` | 5-Minuten-Verlauf des Tages aus `stats_power_sources`: Solarleistung, Hausverbrauch, Batterie-SoC |
+
+Damit funktioniert die Karte auf jeder SFML-Installation unverändert — es werden keine Wechselrichter-, Speicher- oder Verbrauchssensoren der eigenen Anlage mehr benötigt. Der Batterie-Ladestand wird als Prozent auf der rechten Achse gezeichnet (statt früher in kWh, wofür die Speicherkapazität der Anlage in der Karte stehen musste).
+
+Der frühere Kopfwert „Prognose heute Rest" kam aus dem SFML-Sensor `…forecast_today_remaining`, der deutlich zu hohe Werte liefern kann (beobachtet: 59,5 kWh Rest bei 41,4 kWh Tagesprognose). Die Karte rechnet den Rest jetzt selbst aus den Stundenprognosen der Datenbank. Wer den Restwert außerhalb der Karte braucht (z. B. für eine Energiefluss-Karte), legt einen kleinen Template-Sensor an:
+
+```yaml
+template:
+  - sensor:
+      - name: "SFML Prognose Rest heute"
+        unique_id: sfml_prognose_rest_heute
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: measurement
+        availability: >
+          {{ state_attr('sensor.sfml_card_prognose', 'rest_kwh') is not none }}
+        state: >
+          {{ state_attr('sensor.sfml_card_prognose', 'rest_kwh') }}
+```
 
 ## Verlaufsnavigation
 

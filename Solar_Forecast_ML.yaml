@@ -1,4 +1,5 @@
 type: custom:apexcharts-card
+update_interval: 10min
 grid_options:
   columns: full
 header:
@@ -20,137 +21,150 @@ now:
   color: blue
 span:
   start: day
-  offset: "-0day"
 all_series_config:
   type: area
   opacity: 0.9
   stroke_width: 1
 yaxis:
-  - id: kW
+  - id: kw
     show: true
     min: 0
     apex_config:
       tickAmount: 5
       title:
-        text: kWh (AC)
+        text: kW (AC)
+  - id: soc
+    show: true
+    opposite: true
+    min: 0
+    max: 100
+    apex_config:
+      tickAmount: 5
+      title:
+        text: Batterie %
   - id: header_only
     show: false
 series:
-  - entity: sensor.senec_battery_charge_percent
+  - entity: sensor.sfml_card_tagesverlauf
     name: Batterie
-    float_precision: 1
+    yaxis_id: soc
     type: area
     color: green
     stroke_width: 2
     opacity: 0.05
-    yaxis_id: kW
-    unit: kWh
-    transform: return x * 7.5 / 100;
-    extend_to: now
+    unit: "%"
+    float_precision: 0
     show:
       legend_value: true
       in_header: false
-    group_by:
-      func: last
-      duration: 5m
-  - entity: sensor.senec_house_power
+    data_generator: |
+      var reihe = JSON.parse(entity.attributes.series || "[]");
+      return reihe.filter(p => p.b !== null).map(p => [p.t * 1000, p.b]);
+  - entity: sensor.sfml_card_tagesverlauf
     name: Verbrauch
-    float_precision: 3
+    yaxis_id: kw
     type: area
     color: red
     stroke_width: 2
     opacity: 0.1
-    yaxis_id: kW
     unit: kW
-    transform: return x/1000;
-    extend_to: now
+    float_precision: 3
     show:
       legend_value: true
       in_header: false
-    group_by:
-      func: avg
-      duration: 5m
-  - entity: sensor.piko_wechselrichter_dc_power_pv
+    data_generator: |
+      var reihe = JSON.parse(entity.attributes.series || "[]");
+      return reihe.map(p => [p.t * 1000, p.h / 1000]);
+  - entity: sensor.sfml_card_tagesverlauf
     name: Solarerzeugung
-    float_precision: 3
+    yaxis_id: kw
+    type: area
     color: orange
     stroke_width: 2
     opacity: 0.6
-    yaxis_id: kW
     unit: kW
-    transform: return x/1000;
-    extend_to: now
+    float_precision: 3
     show:
       legend_value: true
       in_header: false
-    group_by:
-      func: avg
-      duration: 5m
-  - entity: sensor.sfml_tagesprognose
+    data_generator: |
+      var reihe = JSON.parse(entity.attributes.series || "[]");
+      return reihe.map(p => [p.t * 1000, p.s / 1000]);
+  - entity: sensor.sfml_card_prognose
     name: SFML Prognose
-    extend_to: false
+    yaxis_id: kw
     color: grey
     opacity: 0.3
     stroke_width: 2
-    yaxis_id: kW
+    extend_to: false
     show:
       legend_value: false
       in_header: false
     data_generator: |
-      var today = new Date();
-      var data = JSON.parse(entity.attributes.hourly_forecast);
-      return data.map((entry) => {
-        var date = new Date(today.getFullYear(), today.getMonth(), today.getDate(), entry.hour, 30);
-        return [date, entry.kwh];
+      var heute = new Date();
+      var daten = JSON.parse(entity.attributes.hourly_forecast || "[]");
+      return daten.map((eintrag) => {
+        var zeit = new Date(heute.getFullYear(), heute.getMonth(), heute.getDate(), eintrag.hour, 30);
+        return [zeit, eintrag.kwh];
       });
-  - entity: sensor.sfml_tagesprognose
-    yaxis_id: header_only
-    name: Prognose heute
-    float_precision: 1
-    unit: " kWh"
-    show:
-      legend_value: true
-      in_header: true
-      in_chart: false
-  - entity: sensor.sfml_pv_gesamt_yield_daily
+  - entity: sensor.sfml_card_ertrag_heute
     yaxis_id: header_only
     name: Heute bis jetzt
     float_precision: 1
     color: orange
+    unit: " kWh"
     show:
       legend_value: true
       in_header: true
       in_chart: false
-  - entity: sensor.solar_forecast_ml_next_hour_forecast
+  - entity: sensor.sfml_card_prognose
     yaxis_id: header_only
-    name: Nächste Stunde
+    name: Prognose heute
+    color: "#FF69B4"
     float_precision: 1
     unit: " kWh"
     show:
       legend_value: true
       in_header: true
       in_chart: false
-  - entity: sensor.none_forecast_today_remaining
+  - entity: sensor.sfml_card_prognose
+    attribute: rest_kwh
     yaxis_id: header_only
     name: Prognose heute Rest
+    color: "#FF69B4"
     float_precision: 1
     unit: " kWh"
     show:
       legend_value: true
       in_header: true
       in_chart: false
-  - entity: sensor.none_forecast_tomorrow
+  - entity: sensor.sfml_card_prognose
+    attribute: naechste_stunde_kwh
+    yaxis_id: header_only
+    name: Prognose nächste Stunde
+    color: "#FF69B4"
+    float_precision: 1
+    unit: " kWh"
+    show:
+      legend_value: true
+      in_header: true
+      in_chart: false
+  - entity: sensor.sfml_card_prognose
+    attribute: morgen_kwh
     yaxis_id: header_only
     name: Prognose morgen
+    color: "#8B008B"
     float_precision: 1
     unit: " kWh"
     show:
       legend_value: true
       in_header: true
       in_chart: false
-  - entity: sensor.none_energy
+  - entity: sensor.sfml_card_prognose
+    attribute: uebermorgen_kwh
     yaxis_id: header_only
     name: Prognose übermorgen
+    color: "#8B008B"
     float_precision: 1
     unit: " kWh"
     show:

@@ -375,3 +375,69 @@
       )) as history_data
   column: "state"
   unique_id: sfml_stats_string_sued_history
+
+# =============================================================================
+# Sensoren für Solar_Forecast_ML.yaml (Gesamtübersichts-Karte)
+# Alle Werte kommen aus der SFML-Datenbank — keine anlagenspezifischen Sensoren.
+# =============================================================================
+
+- name: "SFML Card Prognose"
+  db_url: "sqlite:////config/solar_forecast_ml/solar_forecast.db"
+  query: >-
+    WITH stunden AS (
+      SELECT target_hour AS h, prediction_kwh AS kwh
+      FROM hourly_predictions hp
+      WHERE target_date = date('now','localtime')
+        AND prediction_created_at = (
+          SELECT MAX(prediction_created_at) FROM hourly_predictions
+          WHERE target_date = hp.target_date AND target_hour = hp.target_hour)
+    ),
+    jetzt AS (
+      SELECT CAST(strftime('%H','now','localtime') AS INTEGER) AS stunde,
+             strftime('%M','now','localtime')/60.0 AS anteil
+    )
+    SELECT
+      (SELECT ROUND(prediction_kwh,2) FROM daily_forecasts
+        WHERE forecast_type='today' AND forecast_date=date('now','localtime')
+        ORDER BY created_at DESC LIMIT 1) AS state,
+      (SELECT ROUND(prediction_kwh,2) FROM daily_forecasts
+        WHERE forecast_type='tomorrow' AND forecast_date=date('now','localtime','+1 day')
+        ORDER BY created_at DESC LIMIT 1) AS morgen_kwh,
+      (SELECT ROUND(prediction_kwh,2) FROM daily_forecasts
+        WHERE forecast_type='day_after_tomorrow' AND forecast_date=date('now','localtime','+2 day')
+        ORDER BY created_at DESC LIMIT 1) AS uebermorgen_kwh,
+      (SELECT ROUND(COALESCE(SUM(CASE
+          WHEN h > (SELECT stunde FROM jetzt) THEN kwh
+          WHEN h = (SELECT stunde FROM jetzt) THEN kwh * (1.0 - (SELECT anteil FROM jetzt))
+          ELSE 0 END),0),2) FROM stunden) AS rest_kwh,
+      ROUND(COALESCE((SELECT kwh FROM stunden WHERE h = (SELECT stunde FROM jetzt)+1),0),2) AS naechste_stunde_kwh,
+      (SELECT json_group_array(json_object('hour', h, 'kwh', ROUND(kwh,3))) FROM stunden) AS hourly_forecast;
+  column: "state"
+  unit_of_measurement: "kWh"
+  unique_id: sfml_card_prognose
+
+- name: "SFML Card Ertrag heute"
+  db_url: "sqlite:////config/solar_forecast_ml/solar_forecast.db"
+  query: >-
+    SELECT ROUND(COALESCE(solar_yield_kwh,0),2) AS state
+    FROM stats_daily_energy WHERE date = date('now','localtime');
+  column: "state"
+  unit_of_measurement: "kWh"
+  unique_id: sfml_card_ertrag_heute
+
+- name: "SFML Card Tagesverlauf"
+  db_url: "sqlite:////config/solar_forecast_ml/solar_forecast.db"
+  query: >-
+    SELECT COUNT(*) AS state,
+      json_group_array(json_object('t', ts, 's', s_w, 'h', h_w, 'b', soc)) AS series
+    FROM (
+      SELECT CAST(strftime('%s', MIN(timestamp)) AS INTEGER) AS ts,
+             CAST(ROUND(AVG(solar_power_w)) AS INTEGER) AS s_w,
+             CAST(ROUND(AVG(house_consumption_w)) AS INTEGER) AS h_w,
+             ROUND(AVG(battery_soc),1) AS soc
+      FROM stats_power_sources
+      WHERE date = date('now','localtime')
+      GROUP BY CAST(strftime('%s', timestamp) AS INTEGER)/300
+      ORDER BY ts);
+  column: "state"
+  unique_id: sfml_card_tagesverlauf
