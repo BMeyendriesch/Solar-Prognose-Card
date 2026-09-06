@@ -110,6 +110,8 @@ series:
   - entity: sensor.sfml_card_ertrag_heute
     yaxis_id: header_only
     name: Heute bis jetzt
+    data_generator: |
+      return [[new Date(), parseFloat(entity.state)]];
     float_precision: 1
     color: orange
     unit: " kWh"
@@ -120,6 +122,8 @@ series:
   - entity: sensor.sfml_card_prognose
     yaxis_id: header_only
     name: Prognose heute
+    data_generator: |
+      return [[new Date(), parseFloat(entity.state)]];
     color: "#FF69B4"
     float_precision: 1
     unit: " kWh"
@@ -128,7 +132,8 @@ series:
       in_header: true
       in_chart: false
   - entity: sensor.sfml_card_prognose
-    attribute: rest_kwh
+    data_generator: |
+      return [[new Date(), entity.attributes.rest_kwh]];
     yaxis_id: header_only
     name: Prognose heute Rest
     color: "#FF69B4"
@@ -139,7 +144,8 @@ series:
       in_header: true
       in_chart: false
   - entity: sensor.sfml_card_prognose
-    attribute: naechste_stunde_kwh
+    data_generator: |
+      return [[new Date(), entity.attributes.naechste_stunde_kwh]];
     yaxis_id: header_only
     name: Prognose nächste Stunde
     color: "#FF69B4"
@@ -150,7 +156,8 @@ series:
       in_header: true
       in_chart: false
   - entity: sensor.sfml_card_prognose
-    attribute: morgen_kwh
+    data_generator: |
+      return [[new Date(), entity.attributes.morgen_kwh]];
     yaxis_id: header_only
     name: Prognose morgen
     color: "#8B008B"
@@ -161,7 +168,8 @@ series:
       in_header: true
       in_chart: false
   - entity: sensor.sfml_card_prognose
-    attribute: uebermorgen_kwh
+    data_generator: |
+      return [[new Date(), entity.attributes.uebermorgen_kwh]];
     yaxis_id: header_only
     name: Prognose übermorgen
     color: "#8B008B"
