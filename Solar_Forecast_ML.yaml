@@ -62,7 +62,7 @@ series:
       var reihe = JSON.parse(entity.attributes.series || "[]");
       return reihe.filter(p => p.b !== null).map(p => [p.t * 1000, p.b]);
   - entity: sensor.sfml_card_tagesverlauf
-    name: Verbrauch
+    name: Verbrauch (AC)
     extend_to: now
     yaxis_id: kw
     type: area
