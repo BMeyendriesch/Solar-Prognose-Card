@@ -47,6 +47,30 @@ Damit funktioniert die Karte auf jeder SFML-Installation unverändert — es wer
 
 **Messebenen (AC/DC):** Die Solar-Kurve, die Prognose und der Tagesertrag stammen aus SFMLs eigener Messwelt — also von den Sensoren, die in SFML als Panel-Gruppen konfiguriert sind. Wer dort (wie in der Referenzanlage) DC-Strangsensoren eingetragen hat, sieht DC-Werte; der Hausverbrauch ist dagegen immer AC. Die Achse ist deshalb neutral mit „kW" beschriftet und die Solarserie als „(DC)" gekennzeichnet. Die Differenz zwischen beiden Ebenen ist die Wechselrichter-Wandlung (typisch 3–4 %).
 
+**AC-Variante der Solar-Kurve:** Wer Verbrauch (AC) und Erzeugung konsequent auf derselben Messebene sehen will, ersetzt die Serie „Solarerzeugung (DC)" durch den AC-Erzeugungssensor der eigenen Anlage — dann darf die Achse wieder „kW (AC)" heißen:
+
+```yaml
+  - entity: sensor.<dein_ac_erzeugungssensor>   # z. B. Speicher- oder Wechselrichter-AC-Ausgang
+    name: Solarerzeugung
+    yaxis_id: kw
+    type: area
+    color: orange
+    stroke_width: 2
+    opacity: 0.6
+    unit: kW
+    float_precision: 3
+    transform: return x/1000;
+    extend_to: now
+    show:
+      legend_value: true
+      in_header: false
+    group_by:
+      func: avg
+      duration: 5m
+```
+
+Die Kurve kommt dann aus der HA-Historie statt aus der SFML-Datenbank; alle übrigen Serien bleiben unverändert.
+
 **Recorder-Empfehlung:** `sensor.sfml_card_tagesverlauf` und `sensor.sfml_card_prognose` tragen große, sich ständig ändernde JSON-Attribute. Die Karte liest nur den Live-Zustand — Historie braucht sie nicht. Wer die Datenbank schlank halten will, schließt beide vom Recorder aus:
 
 ```yaml
