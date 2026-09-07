@@ -47,6 +47,7 @@ yaxis:
 series:
   - entity: sensor.sfml_card_tagesverlauf
     name: Batterie
+    extend_to: now
     yaxis_id: soc
     type: area
     color: green
@@ -62,6 +63,7 @@ series:
       return reihe.filter(p => p.b !== null).map(p => [p.t * 1000, p.b]);
   - entity: sensor.sfml_card_tagesverlauf
     name: Verbrauch
+    extend_to: now
     yaxis_id: kw
     type: area
     color: red
@@ -77,6 +79,7 @@ series:
       return reihe.map(p => [p.t * 1000, p.h / 1000]);
   - entity: sensor.sfml_card_tagesverlauf
     name: Solarerzeugung
+    extend_to: now
     yaxis_id: kw
     type: area
     color: orange
