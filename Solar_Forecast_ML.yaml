@@ -45,54 +45,6 @@ yaxis:
   - id: header_only
     show: false
 series:
-  - entity: sensor.sfml_card_tagesverlauf
-    name: Batterie
-    extend_to: now
-    yaxis_id: soc
-    type: area
-    color: green
-    stroke_width: 2
-    opacity: 0.05
-    unit: "%"
-    float_precision: 0
-    show:
-      legend_value: true
-      in_header: false
-    data_generator: |
-      var reihe = JSON.parse(entity.attributes.series || "[]");
-      return reihe.filter(p => p.b !== null).map(p => [p.t * 1000, p.b]);
-  - entity: sensor.sfml_card_tagesverlauf
-    name: Verbrauch (AC)
-    extend_to: now
-    yaxis_id: kw
-    type: area
-    color: red
-    stroke_width: 2
-    opacity: 0.1
-    unit: kW
-    float_precision: 3
-    show:
-      legend_value: true
-      in_header: false
-    data_generator: |
-      var reihe = JSON.parse(entity.attributes.series || "[]");
-      return reihe.map(p => [p.t * 1000, p.h / 1000]);
-  - entity: sensor.sfml_card_tagesverlauf
-    name: Solarerzeugung (DC)
-    extend_to: now
-    yaxis_id: kw
-    type: area
-    color: orange
-    stroke_width: 2
-    opacity: 0.6
-    unit: kW
-    float_precision: 3
-    show:
-      legend_value: true
-      in_header: false
-    data_generator: |
-      var reihe = JSON.parse(entity.attributes.series || "[]");
-      return reihe.map(p => [p.t * 1000, p.s / 1000]);
   - entity: sensor.sfml_card_prognose
     name: SFML Prognose (DC)
     yaxis_id: kw
@@ -110,6 +62,54 @@ series:
         var zeit = new Date(heute.getFullYear(), heute.getMonth(), heute.getDate(), eintrag.hour, 30);
         return [zeit, eintrag.kwh];
       });
+  - entity: sensor.sfml_card_tagesverlauf
+    name: Solarerzeugung (DC)
+    extend_to: now
+    yaxis_id: kw
+    type: area
+    color: orange
+    stroke_width: 2
+    opacity: 0.6
+    unit: kW
+    float_precision: 3
+    show:
+      legend_value: true
+      in_header: false
+    data_generator: |
+      var reihe = JSON.parse(entity.attributes.series || "[]");
+      return reihe.map(p => [p.t * 1000, p.s / 1000]);
+  - entity: sensor.sfml_card_tagesverlauf
+    name: Verbrauch (AC)
+    extend_to: now
+    yaxis_id: kw
+    type: area
+    color: red
+    stroke_width: 2
+    opacity: 0.1
+    unit: kW
+    float_precision: 3
+    show:
+      legend_value: true
+      in_header: false
+    data_generator: |
+      var reihe = JSON.parse(entity.attributes.series || "[]");
+      return reihe.map(p => [p.t * 1000, p.h / 1000]);
+  - entity: sensor.sfml_card_tagesverlauf
+    name: Batterie
+    extend_to: now
+    yaxis_id: soc
+    type: area
+    color: green
+    stroke_width: 2
+    opacity: 0.05
+    unit: "%"
+    float_precision: 0
+    show:
+      legend_value: true
+      in_header: false
+    data_generator: |
+      var reihe = JSON.parse(entity.attributes.series || "[]");
+      return reihe.filter(p => p.b !== null).map(p => [p.t * 1000, p.b]);
   - entity: sensor.sfml_card_ertrag_heute
     yaxis_id: header_only
     name: Heute bis jetzt
