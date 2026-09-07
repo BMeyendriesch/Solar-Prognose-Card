@@ -136,9 +136,7 @@ series:
       in_chart: false
   - entity: sensor.sfml_card_prognose
     data_generator: |
-      var p = parseFloat(entity.state);
-      var ist = parseFloat(hass.states['sensor.sfml_card_ertrag_heute'].state) || 0;
-      return [[new Date(), Math.max(0, p - ist)]];
+      return [[new Date(), entity.attributes.rest_kwh]];
     yaxis_id: header_only
     name: Prognose heute Rest
     color: "#FF69B4"
