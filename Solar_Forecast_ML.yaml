@@ -99,7 +99,7 @@ series:
     extend_to: now
     yaxis_id: soc
     type: area
-    color: green
+    color: lightgreen
     stroke_width: 2
     opacity: 0.2
     unit: "%"
