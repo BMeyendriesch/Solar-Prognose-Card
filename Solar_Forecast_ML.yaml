@@ -49,7 +49,7 @@ series:
     name: SFML Prognose (DC)
     yaxis_id: kw
     color: grey
-    opacity: 0.3
+    opacity: 0.4
     stroke_width: 2
     extend_to: false
     show:
@@ -69,7 +69,7 @@ series:
     type: area
     color: orange
     stroke_width: 2
-    opacity: 0.6
+    opacity: 0.4
     unit: kW
     float_precision: 3
     show:
@@ -85,7 +85,7 @@ series:
     type: area
     color: red
     stroke_width: 2
-    opacity: 0.1
+    opacity: 0.4
     unit: kW
     float_precision: 3
     show:
@@ -101,7 +101,7 @@ series:
     type: area
     color: green
     stroke_width: 2
-    opacity: 0.05
+    opacity: 0.2
     unit: "%"
     float_precision: 0
     show:
