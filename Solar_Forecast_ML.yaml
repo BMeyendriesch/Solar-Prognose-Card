@@ -32,7 +32,7 @@ yaxis:
     apex_config:
       tickAmount: 5
       title:
-        text: kW
+        text: kW (DC)
   - id: soc
     show: true
     opposite: true
@@ -94,7 +94,7 @@ series:
       var reihe = JSON.parse(entity.attributes.series || "[]");
       return reihe.map(p => [p.t * 1000, p.s / 1000]);
   - entity: sensor.sfml_card_prognose
-    name: SFML Prognose
+    name: SFML Prognose (DC)
     yaxis_id: kw
     color: grey
     opacity: 0.3
