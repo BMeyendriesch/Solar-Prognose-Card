@@ -45,6 +45,8 @@ Die Karte **Solar_Forecast_ML.yaml** liest sämtliche Werte aus der SFML-Datenba
 
 Damit funktioniert die Karte auf jeder SFML-Installation unverändert — es werden keine Wechselrichter-, Speicher- oder Verbrauchssensoren der eigenen Anlage mehr benötigt. Der Batterie-Ladestand wird als Prozent auf der rechten Achse gezeichnet (statt früher in kWh, wofür die Speicherkapazität der Anlage in der Karte stehen musste).
 
+**Messebenen (AC/DC):** Die Solar-Kurve, die Prognose und der Tagesertrag stammen aus SFMLs eigener Messwelt — also von den Sensoren, die in SFML als Panel-Gruppen konfiguriert sind. Wer dort (wie in der Referenzanlage) DC-Strangsensoren eingetragen hat, sieht DC-Werte; der Hausverbrauch ist dagegen immer AC. Die Achse ist deshalb neutral mit „kW" beschriftet und die Solarserie als „(DC)" gekennzeichnet. Die Differenz zwischen beiden Ebenen ist die Wechselrichter-Wandlung (typisch 3–4 %).
+
 **Recorder-Empfehlung:** `sensor.sfml_card_tagesverlauf` und `sensor.sfml_card_prognose` tragen große, sich ständig ändernde JSON-Attribute. Die Karte liest nur den Live-Zustand — Historie braucht sie nicht. Wer die Datenbank schlank halten will, schließt beide vom Recorder aus:
 
 ```yaml
