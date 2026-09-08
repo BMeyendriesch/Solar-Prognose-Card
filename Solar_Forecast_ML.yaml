@@ -15,6 +15,29 @@ apex_config:
     enabled: true
     shared: true
     followCursor: true
+  # Farbverläufe unter den Messkurven (Serien 2–4); die Prognoselinie (Serie 1)
+  # und die reinen Kopfzeilenwerte bleiben ohne Verlauf.
+  fill:
+    type:
+      - solid
+      - gradient
+      - gradient
+      - gradient
+      - solid
+      - solid
+      - solid
+      - solid
+      - solid
+      - solid
+    gradient:
+      shade: dark
+      type: vertical
+      shadeIntensity: 0.15
+      opacityFrom: 0.9
+      opacityTo: 0.15
+      stops:
+        - 0
+        - 100
 graph_span: 0.999d
 now:
   show: true
@@ -48,9 +71,11 @@ series:
   - entity: sensor.sfml_card_prognose
     name: SFML Prognose (DC)
     yaxis_id: kw
-    color: grey
-    opacity: 0.4
+    type: line
+    color: orange
+    opacity: 1
     stroke_width: 2
+    stroke_dash: 5
     extend_to: false
     show:
       legend_value: false
@@ -69,7 +94,7 @@ series:
     type: area
     color: orange
     stroke_width: 2
-    opacity: 0.4
+    opacity: 0.9
     unit: kW
     float_precision: 3
     show:
@@ -85,7 +110,7 @@ series:
     type: area
     color: red
     stroke_width: 2
-    opacity: 0.4
+    opacity: 0.9
     unit: kW
     float_precision: 3
     show:
@@ -101,7 +126,7 @@ series:
     type: area
     color: lightgreen
     stroke_width: 2
-    opacity: 0.2
+    opacity: 0.9
     unit: "%"
     float_precision: 0
     show:

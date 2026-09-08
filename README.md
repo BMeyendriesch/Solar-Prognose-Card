@@ -304,13 +304,13 @@ Alle Cards verwenden ein einheitliches Farbschema:
 | Farbe | Bedeutung |
 |---|---|
 | **Orange** | Erzeugung / IST-Messwerte |
-| **Grau (gestrichelt)** | Prognose |
+| **Orange (gestrichelt, ohne Fläche)** | Prognose |
 | **Grün** | Batterie-Ladezustand |
 | **Rot** | Hausverbrauch |
 | **Blau (vertikale Linie)** | Aktuelle Uhrzeit |
 
 Jede Card besteht aus:
-- **Chart-Serien** — Kurven auf dem Diagramm (Messwerte als durchgezogene Fläche, Prognose als gestrichelte Fläche)
+- **Chart-Serien** — Kurven auf dem Diagramm (Messwerte als durchgezogene Linie mit Farbverlauf darunter, Prognose als gestrichelte Linie in der Farbe der Solarerzeugung, ohne Fläche)
 - **Header-Serien** — Kennzahlen im Kartenkopf (IST-Summe, Prognose-Summe), ohne Darstellung im Chart
 
 Die Prognose-Daten werden per `data_generator` aus den JSON-Attributen der SQL-Sensoren gelesen. Echtzeit-Messwerte nutzen die HA-History mit 5-Minuten-Mittelwerten.
